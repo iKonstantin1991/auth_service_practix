@@ -9,6 +9,14 @@ from sqlalchemy.dialects.postgresql import UUID
 from db.postgres import Base
 
 
+user_role = Table(
+    'user_role',
+    Base.metadata,
+    Column('user_id', ForeignKey('users.id'), primary_key=True),
+    Column('role_id', ForeignKey('roles.id'), primary_key=True),
+)
+
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -46,11 +54,3 @@ class UserLogin(Base):
 
     def __repr__(self) -> str:
         return f'<UserLogin {self.id}>'
-
-
-user_role = Table(
-    'user_role',
-    Base.metadata,
-    Column('user_id', ForeignKey('users.id'), primary_key=True),
-    Column('role_id', ForeignKey('roles.id'), primary_key=True),
-)
