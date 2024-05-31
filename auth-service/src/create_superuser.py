@@ -25,13 +25,13 @@ if __name__ == '__main__':
     cur.execute(f"select id from roles where name = '{SUPERUSER}'")
     role_id = cur.fetchone()
     message = ''
-    if role_id:
-        cur.execute('insert into user_role values(%s, %s)', (str(user_id), role_id))
-    else:
+    if not role_id:
         role_id = uuid.uuid4()
         cur.execute('insert into roles values(%s, %s, %s)', (str(role_id), SUPERUSER, datetime.now()))
         message = f'added role superuser with id = {role_id}\n'
-        cur.execute('insert into user_role values(%s, %s)', (str(user_id), str(role_id)))
+    else:
+        role_id = role_id[0]
+    cur.execute('insert into user_role values(%s, %s)', (str(user_id), str(role_id)))
     message += f'added superuser with id = {user_id}'
     conn.commit()
     print(message)
