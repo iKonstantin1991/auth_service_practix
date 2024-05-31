@@ -31,21 +31,15 @@ class TokenStorage:
         except RedisError as e:
             logger.error('Failed to save access token %s in cache: %s', access_token, e)
 
-    async def delete_access_token(self, access_token: str, user_id: UUID):
-        try:
-            await self.cache_storage.delete(self._access_cache_key(user_id))
-        except RedisError as e:
-            logger.error('Failed to delete access token %s from cache% %s', access_token, e)
-
-    async def check_access_token(self, access_token: str, user_id: UUID):
+    async def check_login(self, access_token: str, user_id: UUID):
         try:
             access_token = await self.cache_storage.get(self._access_cache_key(user_id))
         except RedisError as e:
             logger.error('Failed to check access token %s in cache% %s', access_token, e)
 
         if not access_token:
-            return False
-        return True
+            return True
+        return False
 
     @staticmethod
     def _refresh_cache_key(user_id: UUID) -> str:
