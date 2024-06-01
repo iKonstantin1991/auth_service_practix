@@ -10,5 +10,5 @@ class PasswordService:
             'sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
 
 
-async def get_password_service() -> PasswordService:
+def get_password_service() -> PasswordService:
     return PasswordService()
