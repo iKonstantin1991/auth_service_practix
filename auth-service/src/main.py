@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 import logging
-from typing import Any
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
@@ -11,6 +10,9 @@ from core.config import settings
 from core.logger import LOGGING
 from db import redis
 from api.v1 import auth
+
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -31,7 +33,8 @@ app = FastAPI(
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 
 @app.exception_handler(Exception)
-async def exception_handler(*_: Any) -> ORJSONResponse:
+async def exception_handler(request: Request, exc: Exception) -> ORJSONResponse:
+    logger.error('Exception has occurred when handled request to %s: %s', request.url , exc)
     return ORJSONResponse(status_code=500, content={'detail': 'internal server error'})
 
 

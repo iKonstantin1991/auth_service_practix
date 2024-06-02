@@ -20,6 +20,7 @@ class TokenStorage:
         self.cache_storage = cache_storage
 
     async def save_refresh_token(self, refresh_token: str, ttl: int) -> None:
+        logger.info('Saving refresh token in cache')
         try:
             await self.cache_storage.set(self._refresh_cache_key(refresh_token), _TOKEN_KEY, ttl)
         except RedisError as e:
@@ -27,6 +28,7 @@ class TokenStorage:
             raise
 
     async def check_refresh_token_exists(self, refresh_token: str) -> bool:
+        logger.info('Checking if refresh token exists in cache')
         try:
             token = await self.cache_storage.getdel(self._refresh_cache_key(refresh_token))
             return token is not None
@@ -35,6 +37,7 @@ class TokenStorage:
             raise
 
     async def save_revoked_access_token(self, access_token: str, ttl: int) -> None:
+        logger.info('Saving revoked access token in cache')
         try:
             await self.cache_storage.set(self._revoked_access_cache_key(access_token), _TOKEN_KEY, ttl)
         except RedisError as e:
@@ -42,6 +45,7 @@ class TokenStorage:
             raise
 
     async def check_access_token_revoked(self, access_token: str) -> bool:
+        logger.info('Checking if access token is revoked in cache')
         try:
             is_exist = await self.cache_storage.exists(self._revoked_access_cache_key(access_token))
             return bool(is_exist)

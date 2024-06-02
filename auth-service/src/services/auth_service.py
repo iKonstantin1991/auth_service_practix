@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Annotated, List
 from uuid import uuid4, UUID
@@ -18,6 +19,8 @@ from storage.token_storage import TokenStorage, get_token_storage
 _ALGORITHM = "HS256"
 _ACCESS_TOKEN_EXPIRE_SECONDS = 24 * 60 * 60  # 1 day
 _REFRESH_TOKEN_EXPIRE_SECONDS = 10 * 24 * 60 * 60  # 10 days
+
+logger = logging.getLogger(__name__)
 
 
 class TokenPayload(BaseModel):
@@ -40,6 +43,7 @@ class AuthService:
         self._password_service = password_service
 
     def create_access_token(self, user_id: UUID) -> str:
+        logger.info('Creating access token for user %s', user_id)
         payload = TokenPayload(
             user_id=user_id,
             exp=time.time() + _ACCESS_TOKEN_EXPIRE_SECONDS
@@ -47,6 +51,7 @@ class AuthService:
         return self._create_token(payload)
 
     async def create_refresh_token(self, user_id: UUID) -> str:
+        logger.info('Creating refresh token for user %s', user_id)
         payload = TokenPayload(
             user_id=user_id,
             exp=time.time() + _REFRESH_TOKEN_EXPIRE_SECONDS,
@@ -57,12 +62,15 @@ class AuthService:
 
 
     def verify_password(self, user_email: str, plain_password: str, hashed_password: str) -> bool:
+        logger.info('Verifying password for user with email %s', user_email)
         return self._password_service.verify_password(user_email, plain_password, hashed_password)
 
     async def access_token_invalid(self, access_token: str) -> bool:
+        logger.info('Checking if access token is invalid')
         try:
             self._decode_token(access_token)
-        except jwt.exceptions.InvalidTokenError:
+        except jwt.exceptions.InvalidTokenError as e:
+            logger.info('Access token is invalid: %s', e)
             return True
         return await self._token_storage.check_access_token_revoked(access_token)
 
@@ -72,22 +80,27 @@ class AuthService:
         return payload.user_id
 
     async def refresh_token_invalid(self, refresh_token: str) -> bool:
+        logger.info('Checking if refresh token is invalid')
         try:
             self._decode_token(refresh_token)
-        except jwt.exceptions.InvalidTokenError:
+        except jwt.exceptions.InvalidTokenError as e:
+            logger.info('Refresh token is invalid: %s', e)
             return True
         return not await self._token_storage.check_refresh_token_exists(refresh_token)
 
     async def invalidate_access_token(self, access_token: str) -> None:
+        logger.info('Invalidating access token')
         ttl = int(self._decode_token(access_token).exp - time.time())
         await self._token_storage.save_revoked_access_token(access_token, ttl)
 
     async def get_history(self, user_id: UUID) -> List[UserLogin]:
+        logger.info('Getting auth history for user %s', user_id)
         return await self._db_session.scalars(select(UserLogin)
                                               .where(UserLogin.user_id == user_id)
                                               .order_by(UserLogin.date))
 
     async def update_history(self, user_id: UUID, user_agent: str | None) -> UserLogin:
+        logger.info('Updating auth history for user %s, user agent: %s', user_id, user_agent)
         user_login = UserLogin(id=uuid4(), user_agent=user_agent, user_id=user_id, date=datetime.utcnow())
         self._db_session.add(user_login)
         await self._db_session.commit()
