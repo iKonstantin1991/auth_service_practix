@@ -17,10 +17,9 @@ class RoleService:
     STAFF_ROLES = ['superuser', 'admin']
     EXISTING_ROLES = STAFF_ROLES + ['user']
 
-    def is_staff(self, user_roles) -> bool:
+    async def is_staff(self, user_roles) -> bool:
         for staff_role in self.STAFF_ROLES:
-            if staff_role in user_roles and self.is_role_exists(RoleIn(name=staff_role)):
-                print(staff_role, user_roles)
+            if staff_role in user_roles and await self.is_role_exists(RoleIn(name=staff_role)):
                 return True
         return False
 
@@ -46,7 +45,7 @@ class RoleService:
         return RoleOut(id=role_id, name=new_role.name)
 
     async def delete(self, role_id: str):
-        a = await self.async_session.execute(delete(Role).where(Role.id == role_id))
+        await self.async_session.execute(delete(Role).where(Role.id == role_id))
         await self.async_session.commit()
 
 
