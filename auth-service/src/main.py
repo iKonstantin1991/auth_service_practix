@@ -7,6 +7,7 @@ from redis.asyncio import Redis
 
 from core.config import settings
 from db import redis
+from api.v1 import roles
 
 
 @asynccontextmanager
@@ -24,6 +25,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
 
 if __name__ == '__main__':
     uvicorn.run(
