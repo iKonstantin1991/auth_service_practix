@@ -5,7 +5,6 @@ from fastapi import Depends, HTTPException, status
 
 from services.role_service import RoleService, get_role_service
 from services.user_service import UserService, get_user_service
-from api.v1.dependencies import get_request_user_id
 
 
 async def check_user_authorization(
