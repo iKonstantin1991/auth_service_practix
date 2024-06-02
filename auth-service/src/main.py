@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import ORJSONResponse, PlainTextResponse
 from redis.asyncio import Redis
 
 from core.config import settings
@@ -26,6 +26,11 @@ app = FastAPI(
 )
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
+
+@app.exception_handler(Exception)
+async def exception_handler(request, exc):
+    return ORJSONResponse(status_code=500, content={'detail': 'internal server error'})
+
 
 if __name__ == '__main__':
     uvicorn.run(

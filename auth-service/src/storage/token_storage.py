@@ -24,6 +24,7 @@ class TokenStorage:
             await self.cache_storage.set(self._refresh_cache_key(refresh_token), _TOKEN_KEY, ttl)
         except RedisError as e:
             logger.error('Failed to save refresh token %s in cache: %s', refresh_token, e)
+            raise
 
     async def check_refresh_token_exists(self, refresh_token: str) -> bool:
         try:
@@ -31,12 +32,14 @@ class TokenStorage:
             return token is not None
         except RedisError as e:
             logger.error('Failed to delete refresh token %s from cache: %s', refresh_token, e)
+            raise
 
     async def save_revoked_access_token(self, access_token: str, ttl: int) -> None:
         try:
             await self.cache_storage.set(self._revoked_access_cache_key(access_token), _TOKEN_KEY, ttl)
         except RedisError as e:
             logger.error('Failed to save revoked access token %s in cache: %s', access_token, e)
+            raise
 
     async def check_access_token_revoked(self, access_token: str) -> bool:
         try:
@@ -44,6 +47,7 @@ class TokenStorage:
             return bool(is_exist)
         except RedisError as e:
             logger.error('Failed to check if access token %s is revoked in cache %s', access_token, e)
+            raise
 
     @staticmethod
     def _refresh_cache_key(refresh_token: str) -> str:
