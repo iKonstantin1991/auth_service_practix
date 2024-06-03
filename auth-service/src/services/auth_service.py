@@ -65,7 +65,7 @@ class AuthService:
         logger.info('Verifying password for user with email %s', user_email)
         return self._password_service.verify_password(user_email, plain_password, hashed_password)
 
-    async def access_token_invalid(self, access_token: str) -> bool:
+    async def is_access_token_invalid(self, access_token: str) -> bool:
         logger.info('Checking if access token is invalid')
         try:
             self._decode_token(access_token)
@@ -74,12 +74,7 @@ class AuthService:
             return True
         return await self._token_storage.check_access_token_revoked(access_token)
 
-
-    def get_user_id(self, access_token: str) -> UUID:
-        payload = self._decode_token(access_token)
-        return payload.user_id
-
-    async def refresh_token_invalid(self, refresh_token: str) -> bool:
+    async def is_refresh_token_invalid(self, refresh_token: str) -> bool:
         logger.info('Checking if refresh token is invalid')
         try:
             self._decode_token(refresh_token)
@@ -92,6 +87,10 @@ class AuthService:
         logger.info('Invalidating access token')
         ttl = int(self._decode_token(access_token).exp - time.time())
         await self._token_storage.save_revoked_access_token(access_token, ttl)
+
+    def get_user_id(self, access_token: str) -> UUID:
+        payload = self._decode_token(access_token)
+        return payload.user_id
 
     async def get_history(self, user_id: UUID) -> List[UserLogin]:
         logger.info('Getting auth history for user %s', user_id)

@@ -21,6 +21,6 @@ async def get_request_user_id(
     access_token: Annotated[str, Depends(get_token)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ) -> UUID:
-    if await auth_service.access_token_invalid(access_token):
+    if await auth_service.is_access_token_invalid(access_token):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid access token")
     return auth_service.get_user_id(access_token)

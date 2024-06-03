@@ -44,7 +44,7 @@ async def logout(
     access_token: Annotated[str, Depends(get_token)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> Response:
-    if await auth_service.access_token_invalid(access_token):
+    if await auth_service.is_access_token_invalid(access_token):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid access token")
     await auth_service.invalidate_access_token(access_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -55,7 +55,7 @@ async def refresh(
     refresh_token: Annotated[str, Depends(get_token)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> Token:
-    if await auth_service.refresh_token_invalid(refresh_token):
+    if await auth_service.is_refresh_token_invalid(refresh_token):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid refresh token")
     user_id = auth_service.get_user_id(refresh_token)
     access_token = auth_service.create_access_token(user_id)

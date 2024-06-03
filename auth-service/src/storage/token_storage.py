@@ -45,7 +45,7 @@ class TokenStorage:
             raise
 
     async def check_access_token_revoked(self, access_token: str) -> bool:
-        logger.info('Checking if access token is revoked in cache')
+        logger.info('Checking if access token was revoked in cache')
         try:
             is_exist = await self.cache_storage.exists(self._revoked_access_cache_key(access_token))
             return bool(is_exist)
