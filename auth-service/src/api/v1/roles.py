@@ -21,7 +21,7 @@ async def create_role(
         new_role: RoleIn,
         role_service: Annotated[RoleService, Depends(get_role_service)],
 ) -> RoleOut:
-    if await role_service.is_role_exists(new_role.name):
+    if await role_service.is_role_exists_by_name(new_role.name):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f'Role {new_role.name} already exists')
     new_role = await role_service.create(new_role)
     return new_role

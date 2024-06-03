@@ -18,8 +18,9 @@ class RoleService:
     EXISTING_ROLES = STAFF_ROLES + ['user']
 
     async def is_staff(self, user_roles) -> bool:
+        user_roles_names = [user_role['name'] for user_role in user_roles]
         for staff_role in self.STAFF_ROLES:
-            if staff_role in user_roles and await self.is_role_exists(staff_role):
+            if staff_role in user_roles_names and await self.is_role_exists_by_name(staff_role):
                 return True
         return False
 
@@ -28,8 +29,15 @@ class RoleService:
         roles = roles.scalars().all()
         return roles
 
-    async def is_role_exists(self, new_role_name: str) -> bool:
+    async def is_role_exists_by_name(self, new_role_name: str) -> bool:
         role = await self.async_session.execute(select(Role).where(Role.name == new_role_name))
+        role = role.scalars().all()
+        if role:
+            return True
+        return False
+
+    async def is_role_exists_by_id(self, role_id: str) -> bool:
+        role = await self.async_session.execute(select(Role).where(Role.id == role_id))
         role = role.scalars().all()
         if role:
             return True
@@ -44,6 +52,9 @@ class RoleService:
     async def delete(self, role_id: str):
         await self.async_session.execute(delete(Role).where(Role.id == role_id))
         await self.async_session.commit()
+
+    async def get_role_by_id(self, role_id: str) -> Role:
+        return await self.async_session.scalar(select(Role).where(Role.id == role_id))
 
 
 def get_role_service(

@@ -9,7 +9,7 @@ from redis.asyncio import Redis
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
-from api.v1 import auth, roles
+from api.v1 import auth, roles, users
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ app = FastAPI(
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
+app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
 
 
 @app.exception_handler(Exception)
