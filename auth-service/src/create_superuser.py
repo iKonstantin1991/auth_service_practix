@@ -24,7 +24,7 @@ if __name__ == '__main__':
                 (str(user_id), username, hashed_password, datetime.now()))
     cur.execute(f"select id from roles where name = '{SUPERUSER}'")
     role_id = cur.fetchone()
-    message = ''
+    message = ''  # pylint: disable=invalid-name
     if not role_id:
         role_id = uuid.uuid4()
         cur.execute('insert into roles values(%s, %s, %s)', (str(role_id), SUPERUSER, datetime.now()))

@@ -1,12 +1,12 @@
 from uuid import UUID
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCredentials(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8)
 
 
 class UserIn(UserCredentials):
@@ -30,11 +30,5 @@ class AuthHistory(BaseModel):
     user_agent: str
     date: datetime
 
-
-class RoleIn(BaseModel):
-    name: str
-
-
-class RoleOut(BaseModel):
-    id: UUID
-    name: str
+    class Config:
+        from_attributes = True
