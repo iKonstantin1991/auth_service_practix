@@ -47,7 +47,7 @@ class UserLogin(Base):
     __tablename__ = 'user_logins'
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    user_agent: Mapped[str] = mapped_column(nullable=False)
+    user_agent: Mapped[str | None]
     date: Mapped[datetime] = mapped_column(nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id'))
     user: Mapped['User'] = relationship(back_populates='logins')
