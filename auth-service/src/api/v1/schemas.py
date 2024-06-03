@@ -38,3 +38,6 @@ class RoleIn(BaseModel):
 class RoleOut(BaseModel):
     id: UUID
     name: str
+
+    class Config:
+        from_attributes = True

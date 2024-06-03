@@ -19,20 +19,17 @@ class RoleService:
 
     async def is_staff(self, user_roles) -> bool:
         for staff_role in self.STAFF_ROLES:
-            if staff_role in user_roles and await self.is_role_exists(RoleIn(name=staff_role)):
+            if staff_role in user_roles and await self.is_role_exists(staff_role):
                 return True
         return False
 
-    async def get(self) -> List[RoleOut]:
+    async def get(self) -> List[Role]:
         roles = await self.async_session.execute(select(Role))
         roles = roles.scalars().all()
-        roles_out = []
-        for role in roles:
-            roles_out.append(RoleOut(id=role.id, name=role.name))
-        return roles_out
+        return roles
 
-    async def is_role_exists(self, new_role: RoleIn) -> bool:
-        role = await self.async_session.execute(select(Role).where(Role.name == new_role.name))
+    async def is_role_exists(self, new_role_name: str) -> bool:
+        role = await self.async_session.execute(select(Role).where(Role.name == new_role_name))
         role = role.scalars().all()
         if role:
             return True

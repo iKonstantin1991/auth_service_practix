@@ -7,7 +7,7 @@ from services.role_service import RoleService, get_role_service
 from services.user_service import UserService, get_user_service
 
 
-async def check_user_authorization(
+async def check_user_staff(
         request_user_id: Annotated[UUID, Depends(get_request_user_id)],
         user_service: Annotated[UserService, Depends(get_user_service)],
         role_service: Annotated[RoleService, Depends(get_role_service)],
