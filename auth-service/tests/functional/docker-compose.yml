@@ -24,7 +24,7 @@ services:
     expose:
       - "5432"
     env_file:
-      - ../auth-service/.env
+      - ./.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app"]
       interval: 5s
