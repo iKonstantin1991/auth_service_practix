@@ -9,7 +9,7 @@ from redis.asyncio import Redis
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
-from api.v1 import auth
+from api.v1 import auth, roles
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,8 @@ app = FastAPI(
 )
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
+app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
+
 
 @app.exception_handler(Exception)
 async def exception_handler(request: Request, exc: Exception) -> ORJSONResponse:

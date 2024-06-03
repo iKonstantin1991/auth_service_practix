@@ -4,6 +4,8 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, status
 
 from services.auth_service import get_auth_service, AuthService
+from services.role_service import RoleService, get_role_service
+from services.user_service import UserService, get_user_service
 
 _TOKEN_PREFIX = 'Bearer '
 
@@ -24,3 +26,14 @@ async def get_request_user_id(
     if await auth_service.is_access_token_invalid(access_token):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid access token")
     return auth_service.get_user_id(access_token)
+
+
+async def check_user_staff(
+        request_user_id: Annotated[UUID, Depends(get_request_user_id)],
+        user_service: Annotated[UserService, Depends(get_user_service)],
+        role_service: Annotated[RoleService, Depends(get_role_service)],
+):
+    user_roles = await user_service.get_roles(request_user_id)
+    if not await role_service.is_staff(user_roles):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
+

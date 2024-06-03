@@ -32,3 +32,15 @@ class AuthHistory(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RoleIn(BaseModel):
+    name: str
+
+
+class RoleOut(BaseModel):
+    id: UUID
+    name: str
+
+    class Config:
+        from_attributes = True
