@@ -71,16 +71,19 @@ async def test_refresh_returns_tokens(client: Client, user: TestUser) -> None:
 async def test_refresh_invalid_token(client: Client, user: TestUser) -> None:
     access_token, _ = await login(user, client, user_agent=f'test user agent {uuid4()}')
 
-    response = await client.post(f'api/v1/auth/refresh', headers=build_headers(access_token))
+    response = await client.post('api/v1/auth/refresh', headers=build_headers(access_token))
 
     assert response.status == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.asyncio
-async def test_signup_new_user(client: Client, user: TestUser) -> None:
-    response = await client.post('api/v1/auth/signup', body={'email': 'test_user@mail.ru', 'password': 'test_password'})
+async def test_signup_new_user(client: Client) -> None:
+    user = TestUser(id=uuid4(), email='test_user@mail.ru', password='test_password')
+    response = await client.post('api/v1/auth/signup', body={'email': user.email, 'password': user.password})
 
     assert response.status == HTTPStatus.OK
+    body = await response.json()
+    assert body['email'] == user.email
 
 
 @pytest.mark.asyncio

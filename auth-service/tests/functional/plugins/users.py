@@ -1,5 +1,5 @@
 from typing import Iterator
-from uuid import uuid4
+from uuid import uuid4, UUID
 import hashlib
 
 import pytest_asyncio
@@ -11,37 +11,40 @@ from tests.functional.plugins.models import User, Role
 class TestUser(BaseModel):
     __test__ = False
 
+    id: UUID
     email: str
     password: str
 
 
 @pytest_asyncio.fixture(name='user')
 async def fixture_user(db_session) -> Iterator[TestUser]:
+    user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
-        id=uuid4(),
+        id=user_id,
         email=email,
         hashed_password=_hash_password(email, password),
     )
     db_session.add(user)
     await db_session.commit()
-    yield TestUser(email=email, password=password)
+    yield TestUser(id=user_id, email=email, password=password)
 
 
 @pytest_asyncio.fixture(name='superuser')
 async def fixture_superuser(db_session, superuser_role) -> Iterator[TestUser]:
+    user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
-        id=uuid4(),
+        id=user_id,
         email=email,
         hashed_password=_hash_password(email, password),
         roles=[superuser_role],
     )
     db_session.add(user)
     await db_session.commit()
-    yield TestUser(email=email, password=password)
+    yield TestUser(id=user_id, email=email, password=password)
 
 
 @pytest_asyncio.fixture(scope='session', name='superuser_role')
