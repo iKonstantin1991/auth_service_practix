@@ -1,3 +1,5 @@
+from typing import Iterator
+
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import pytest_asyncio
@@ -15,13 +17,13 @@ async_session = sessionmaker(
 
 
 @pytest_asyncio.fixture()
-async def db_session():
+async def db_session() -> Iterator[AsyncSession]:
     async with async_session() as session:
         yield session
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def db_tables():
+async def db_tables() -> Iterator[None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

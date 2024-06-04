@@ -1,7 +1,7 @@
 from typing import Awaitable, Dict, Iterator
 import asyncio
 
-import aiohttp
+from aiohttp import ClientSession, ClientResponse
 import pytest_asyncio
 
 from tests.functional.settings import test_settings
@@ -19,21 +19,21 @@ def event_loop() -> Iterator[asyncio.AbstractEventLoop]:
 
 
 @pytest_asyncio.fixture(scope='session', name='aiohttp_session')
-async def fixture_aiohttp_session() -> Iterator[aiohttp.ClientSession]:
-    session = aiohttp.ClientSession()
+async def fixture_aiohttp_session() -> Iterator[ClientSession]:
+    session = ClientSession()
     yield session
     await session.close()
 
 
 @pytest_asyncio.fixture
-async def make_get_request(aiohttp_session: aiohttp.ClientSession) -> Awaitable[aiohttp.ClientResponse]:
-    async def inner(path: str, params: Dict[str, str] | None = None):
+async def make_get_request(aiohttp_session: ClientSession) -> Awaitable[ClientResponse]:
+    async def inner(path: str, params: Dict[str, str] | None = None) -> ClientResponse:
         return await aiohttp_session.get(f'{_BASE_URL}/{path}', params=(params or {}))
     return inner
 
 
 @pytest_asyncio.fixture
-async def make_post_request(aiohttp_session: aiohttp.ClientSession) -> Awaitable[aiohttp.ClientResponse]:
-    async def inner(path: str, body: Dict[str, str] | None = None):
+async def make_post_request(aiohttp_session: ClientSession) -> Awaitable[ClientResponse]:
+    async def inner(path: str, body: Dict[str, str] | None = None) -> ClientResponse:
         return await aiohttp_session.post(f'{_BASE_URL}/{path}', json=(body or {}))
     return inner

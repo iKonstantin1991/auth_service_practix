@@ -1,3 +1,4 @@
+from typing import Iterator
 from uuid import uuid4
 import hashlib
 from unittest.mock import Mock
@@ -8,7 +9,7 @@ from tests.functional.plugins.models import User, Role
 
 
 @pytest_asyncio.fixture(name='user')
-async def fixture_user(db_session):
+async def fixture_user(db_session) -> Iterator[Mock]:
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
@@ -22,7 +23,7 @@ async def fixture_user(db_session):
 
 
 @pytest_asyncio.fixture(name='superuser')
-async def fixture_superuser(db_session, superuser_role):
+async def fixture_superuser(db_session, superuser_role) -> Iterator[Mock]:
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
@@ -37,7 +38,7 @@ async def fixture_superuser(db_session, superuser_role):
 
 
 @pytest_asyncio.fixture(scope='session', name='superuser_role')
-async def fixture_superuser_role(db_session):
+async def fixture_superuser_role(db_session) -> Iterator[Role]:
     superuser_role = Role(id=uuid4(), name='superuser')
     db_session.add(role)
     await db_session.commit()
