@@ -6,9 +6,28 @@ import pytest_asyncio
 
 from tests.functional.settings import test_settings
 
-pytest_plugins = ['tests.functional.plugins.db', 'tests.functional.plugins.users']
+pytest_plugins = [
+    'tests.functional.plugins.db',
+    'tests.functional.plugins.users',
+    'tests.functional.plugins.redis',
+]
 
 _BASE_URL = f'http://{test_settings.service_host}:{test_settings.service_port}'
+
+
+class Client:
+    def __init__(self, aiohttp_session: ClientSession) -> None:
+        self._aiohttp_session = aiohttp_session
+
+    async def get(
+        self, path: str, params: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
+    ) -> ClientResponse:
+        return await self._aiohttp_session.get(f'{_BASE_URL}/{path}', params=(params or {}), headers=(headers or {}))
+
+    async def post(
+        self, path: str, body: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
+    ) -> ClientResponse:
+        return await self._aiohttp_session.post(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
 
 
 @pytest_asyncio.fixture(scope='session')
@@ -26,14 +45,5 @@ async def fixture_aiohttp_session() -> Iterator[ClientSession]:
 
 
 @pytest_asyncio.fixture
-async def make_get_request(aiohttp_session: ClientSession) -> Awaitable[ClientResponse]:
-    async def inner(path: str, params: Dict[str, str] | None = None) -> ClientResponse:
-        return await aiohttp_session.get(f'{_BASE_URL}/{path}', params=(params or {}))
-    return inner
-
-
-@pytest_asyncio.fixture
-async def make_post_request(aiohttp_session: ClientSession) -> Awaitable[ClientResponse]:
-    async def inner(path: str, body: Dict[str, str] | None = None) -> ClientResponse:
-        return await aiohttp_session.post(f'{_BASE_URL}/{path}', json=(body or {}))
-    return inner
+async def client(aiohttp_session: ClientSession) -> Awaitable[ClientResponse]:
+    return Client(aiohttp_session)
