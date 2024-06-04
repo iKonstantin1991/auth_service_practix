@@ -36,4 +36,3 @@ async def check_user_staff(
     user_roles = await user_service.get_roles(request_user_id)
     if not await role_service.is_staff(user_roles):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
-

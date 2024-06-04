@@ -1,6 +1,6 @@
 import logging
 from uuid import uuid4, UUID
-from typing import Annotated, List, Dict
+from typing import Annotated, List
 
 from fastapi import Depends
 from sqlalchemy import select, update, insert, delete
@@ -35,7 +35,7 @@ class UserService:
         await self._db_session.commit()
         return user
 
-    async def get_roles(self, user_id: UUID) -> List[Dict]:
+    async def get_roles(self, user_id: UUID) -> List[Role]:
         logger.info(f'Getting user roles, user_id = {user_id}')
         user_roles_names = await self._db_session.execute(
             select(Role.id, Role.name)
@@ -60,14 +60,14 @@ class UserService:
         await self._db_session.commit()
         return updated_user.scalar()
 
-    async def does_user_have_role(self, user_id: str, role_id: str):
-        logging.info(f'Checking if user with id = {user_id} have role with id = {role_id}')
+    async def has_role(self, user_id: str, role_id: str):
+        logger.info(f'Checking if user with id = {user_id} have role with id = {role_id}')
         return await self._db_session.scalar(
             select(user_role)
             .where(user_role.c.user_id == user_id, user_role.c.role_id == role_id))
 
     async def add_role_to_user(self, user_id: str, role_id: str) -> str:
-        logging.info(f'Adding role with id = {role_id} to user with id = {user_id}')
+        logger.info(f'Adding role with id = {role_id} to user with id = {user_id}')
         role_id = await self._db_session.execute(
             insert(user_role)
             .values(user_id=user_id, role_id=role_id)
@@ -76,7 +76,7 @@ class UserService:
         return role_id.scalar()
 
     async def delete_role_from_user(self, user_id: str, role_id: str):
-        logging.info(f'Deleting role with id = {role_id} from user with id = {user_id}')
+        logger.info(f'Deleting role with id = {role_id} from user with id = {user_id}')
         await self._db_session.execute(
             delete(user_role)
             .where(user_role.c.user_id == user_id, user_role.c.role_id == role_id)

@@ -4,7 +4,7 @@ from typing import List, Annotated
 from fastapi import APIRouter, Response, status, Depends, HTTPException
 
 from api.v1.schemas import UserIn, UserOut, RoleOut
-from api.v1.dependencies import get_token, get_request_user_id, check_user_staff
+from api.v1.dependencies import get_request_user_id, check_user_staff
 from services.user_service import UserService, get_user_service
 from services.role_service import RoleService, get_role_service
 
@@ -20,8 +20,7 @@ async def get_user(
     if user_id != str(request_user_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
 
-    user = await user_service.get_by_id(user_id)
-    return UserOut(id=user.id, email=user.email)
+    return await user_service.get_by_id(user_id)
 
 
 @router.put('/{user_id}', response_model=UserOut)
@@ -34,8 +33,7 @@ async def update_user(
     if user_id != str(request_user_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
 
-    updated_user = await user_service.update(user_id=user_id, email=user.email, password=user.password)
-    return UserOut(id=updated_user.id, email=updated_user.email)
+    return await user_service.update(user_id=user_id, email=user.email, password=user.password)
 
 
 @router.get('/{user_id}/roles', response_model=List[RoleOut])
@@ -62,12 +60,11 @@ async def assign_role(
     if not await role_service.is_role_exists_by_id(role_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Role not found')
 
-    if await user_service.does_user_have_role(user_id=user_id, role_id=role_id):
+    if await user_service.has_role(user_id=user_id, role_id=role_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='User already has this role')
 
     role_id = await user_service.add_role_to_user(user_id=user_id, role_id=role_id)
-    role = await role_service.get_role_by_id(role_id)
-    return RoleOut(id=role_id, name=role.name)
+    return await role_service.get_role_by_id(role_id)
 
 
 @router.delete('/{user_id}/roles', dependencies=[Depends(check_user_staff)])

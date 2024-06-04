@@ -1,10 +1,10 @@
 import uuid
 from typing import List
 
-from api.v1.schemas import RoleIn, RoleOut
 from fastapi import Depends
 from sqlalchemy import select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from api.v1.schemas import RoleIn, RoleOut
 
 from models.entity import Role
 from db.postgres import get_session
@@ -32,9 +32,7 @@ class RoleService:
     async def is_role_exists_by_name(self, new_role_name: str) -> bool:
         role = await self.async_session.execute(select(Role).where(Role.name == new_role_name))
         role = role.scalars().all()
-        if role:
-            return True
-        return False
+        return bool(role)
 
     async def is_role_exists_by_id(self, role_id: str) -> bool:
         role = await self.async_session.execute(select(Role).where(Role.id == role_id))

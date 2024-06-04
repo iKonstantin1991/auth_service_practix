@@ -3,7 +3,7 @@ from typing import List, Annotated
 from fastapi import APIRouter, Response, status, Depends, HTTPException
 
 from api.v1.schemas import RoleIn, RoleOut
-from api.v1.dependencies import check_user_staff, get_token
+from api.v1.dependencies import check_user_staff
 from services.role_service import RoleService, get_role_service
 
 router = APIRouter()
