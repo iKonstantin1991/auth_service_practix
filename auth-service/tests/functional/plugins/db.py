@@ -16,7 +16,7 @@ async_session = sessionmaker(
 )
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(scope='session')
 async def db_session() -> Iterator[AsyncSession]:
     async with async_session() as session:
         yield session

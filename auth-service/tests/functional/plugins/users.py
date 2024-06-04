@@ -47,7 +47,7 @@ async def fixture_superuser(db_session, superuser_role) -> Iterator[TestUser]:
 @pytest_asyncio.fixture(scope='session', name='superuser_role')
 async def fixture_superuser_role(db_session) -> Iterator[Role]:
     superuser_role = Role(id=uuid4(), name='superuser')
-    db_session.add(role)
+    db_session.add(superuser_role)
     await db_session.commit()
     yield superuser_role
 
