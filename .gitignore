@@ -12,3 +12,5 @@ env/
 venv/
 
 service/
+
+.pytest_cache/

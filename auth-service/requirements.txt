@@ -13,3 +13,5 @@ pylint==3.2.2
 werkzeug==3.0.3
 alembic==1.13.1
 psycopg2-binary==2.9.9
+PyJWT==2.8.0
+gunicorn==22.0.0
