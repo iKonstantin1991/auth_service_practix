@@ -19,7 +19,7 @@ class UserService:
         self._db_session = db_session
         self._password_service = password_service
 
-    async def get_by_id(self, user_id: str) -> User | None:
+    async def get_by_id(self, user_id: UUID) -> User | None:
         logger.info('Getting user by id: %s', user_id)
         return await self._db_session.scalar(select(User).where(User.id == user_id))
 
@@ -43,12 +43,12 @@ class UserService:
                 user_role,
                 Role.id == user_role.c.role_id
             )
-            .where(user_role.c.user_id == str(user_id))
+            .where(user_role.c.user_id == user_id)
         )
-        user_roles_names = [{'id': row[0], 'name': row[1]} for row in user_roles_names]
+        user_roles_names = [Role(id=row[0], name=row[1]) for row in user_roles_names]
         return user_roles_names
 
-    async def update(self, user_id: str, email: str, password: str) -> User:
+    async def update(self, user_id: UUID, email: str, password: str) -> User:
         logger.info(f'Updating user with id = {user_id}')
         hashed_password = self._password_service.get_password_hash(email, password)
         updated_user = await self._db_session.execute(
@@ -60,22 +60,23 @@ class UserService:
         await self._db_session.commit()
         return updated_user.scalar()
 
-    async def has_role(self, user_id: str, role_id: str):
+    async def has_role(self, user_id: UUID, role_id: UUID):
         logger.info(f'Checking if user with id = {user_id} have role with id = {role_id}')
         return await self._db_session.scalar(
             select(user_role)
             .where(user_role.c.user_id == user_id, user_role.c.role_id == role_id))
 
-    async def add_role_to_user(self, user_id: str, role_id: str) -> str:
+    async def add_role_to_user(self, user_id: UUID, role_id: UUID) -> UUID:
         logger.info(f'Adding role with id = {role_id} to user with id = {user_id}')
         role_id = await self._db_session.execute(
             insert(user_role)
             .values(user_id=user_id, role_id=role_id)
             .returning(user_role.c.role_id))
         await self._db_session.commit()
-        return role_id.scalar()
+        role_id = UUID(str(role_id.scalar()))
+        return role_id
 
-    async def delete_role_from_user(self, user_id: str, role_id: str):
+    async def delete_role_from_user(self, user_id: UUID, role_id: UUID) -> None:
         logger.info(f'Deleting role with id = {role_id} from user with id = {user_id}')
         await self._db_session.execute(
             delete(user_role)

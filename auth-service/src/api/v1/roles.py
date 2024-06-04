@@ -1,4 +1,5 @@
 from typing import List, Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Response, status, Depends, HTTPException
 
@@ -29,7 +30,7 @@ async def create_role(
 
 @router.delete('/{role_id}', dependencies=[Depends(check_user_staff)])
 async def delete_role(
-        role_id: str,
+        role_id: UUID,
         role_service: Annotated[RoleService, Depends(get_role_service)],
 ) -> Response:
     await role_service.delete(role_id)

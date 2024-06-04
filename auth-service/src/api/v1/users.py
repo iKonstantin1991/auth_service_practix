@@ -13,11 +13,11 @@ router = APIRouter()
 
 @router.get('/{user_id}', response_model=UserOut)
 async def get_user(
-        user_id: str,
+        user_id: UUID,
         user_service: Annotated[UserService, Depends(get_user_service)],
         request_user_id: Annotated[UUID, Depends(get_request_user_id)],
 ) -> UserOut:
-    if user_id != str(request_user_id):
+    if user_id != request_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
 
     return await user_service.get_by_id(user_id)
@@ -25,12 +25,12 @@ async def get_user(
 
 @router.put('/{user_id}', response_model=UserOut)
 async def update_user(
-        user_id: str,
+        user_id: UUID,
         user: UserIn,
         user_service: Annotated[UserService, Depends(get_user_service)],
         request_user_id: Annotated[UUID, Depends(get_request_user_id)],
 ) -> UserOut:
-    if user_id != str(request_user_id):
+    if user_id != request_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
 
     return await user_service.update(user_id=user_id, email=user.email, password=user.password)
@@ -38,22 +38,21 @@ async def update_user(
 
 @router.get('/{user_id}/roles', response_model=List[RoleOut])
 async def get_user_roles(
-        user_id: str,
+        user_id: UUID,
         user_service: Annotated[UserService, Depends(get_user_service)],
         role_service: Annotated[RoleService, Depends(get_role_service)],
         request_user_id: Annotated[UUID, Depends(get_request_user_id)],
 ) -> List[RoleOut]:
-    user_roles_from_token = await user_service.get_roles(request_user_id)
-    if user_id != str(request_user_id) and not await role_service.is_staff(user_roles_from_token):
+    if user_id != request_user_id and not await role_service.is_staff(await user_service.get_roles(request_user_id)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
 
-    return await user_service.get_roles(UUID(user_id))
+    return await user_service.get_roles(user_id)
 
 
 @router.post('/{user_id}/roles', response_model=RoleOut, dependencies=[Depends(check_user_staff)])
 async def assign_role(
-        user_id: str,
-        role_id: str,
+        user_id: UUID,
+        role_id: UUID,
         role_service: Annotated[RoleService, Depends(get_role_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> RoleOut:
@@ -69,8 +68,8 @@ async def assign_role(
 
 @router.delete('/{user_id}/roles', dependencies=[Depends(check_user_staff)])
 async def dissociate_role(
-        user_id: str,
-        role_id: str,
+        user_id: UUID,
+        role_id: UUID,
         role_service: Annotated[RoleService, Depends(get_role_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> Response:
