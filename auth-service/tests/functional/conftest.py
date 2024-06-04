@@ -16,18 +16,18 @@ _BASE_URL = f'http://{test_settings.service_host}:{test_settings.service_port}'
 
 
 class Client:
-    def __init__(self, aiohttp_session: ClientSession) -> None:
-        self._aiohttp_session = aiohttp_session
+    def __init__(self, session: ClientSession) -> None:
+        self._session = session
 
     async def get(
         self, path: str, params: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
     ) -> ClientResponse:
-        return await self._aiohttp_session.get(f'{_BASE_URL}/{path}', params=(params or {}), headers=(headers or {}))
+        return await self._session.get(f'{_BASE_URL}/{path}', params=(params or {}), headers=(headers or {}))
 
     async def post(
         self, path: str, body: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
     ) -> ClientResponse:
-        return await self._aiohttp_session.post(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
+        return await self._session.post(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
 
 
 @pytest_asyncio.fixture(scope='session')

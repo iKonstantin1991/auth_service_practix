@@ -1,15 +1,22 @@
 from typing import Iterator
 from uuid import uuid4
 import hashlib
-from unittest.mock import Mock
 
 import pytest_asyncio
+from pydantic import BaseModel
 
 from tests.functional.plugins.models import User, Role
 
 
+class TestUser(BaseModel):
+    __test__ = False
+
+    email: str
+    password: str
+
+
 @pytest_asyncio.fixture(name='user')
-async def fixture_user(db_session) -> Iterator[Mock]:
+async def fixture_user(db_session) -> Iterator[TestUser]:
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
@@ -19,11 +26,11 @@ async def fixture_user(db_session) -> Iterator[Mock]:
     )
     db_session.add(user)
     await db_session.commit()
-    yield Mock(email=user.email, password=password)
+    yield TestUser(email=email, password=password)
 
 
 @pytest_asyncio.fixture(name='superuser')
-async def fixture_superuser(db_session, superuser_role) -> Iterator[Mock]:
+async def fixture_superuser(db_session, superuser_role) -> Iterator[TestUser]:
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
@@ -34,7 +41,7 @@ async def fixture_superuser(db_session, superuser_role) -> Iterator[Mock]:
     )
     db_session.add(user)
     await db_session.commit()
-    yield Mock(email=user.email, password=password)
+    yield TestUser(email=email, password=password)
 
 
 @pytest_asyncio.fixture(scope='session', name='superuser_role')

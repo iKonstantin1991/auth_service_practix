@@ -1,15 +1,15 @@
 from http import HTTPStatus
-from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 
 from tests.functional.conftest import Client
+from tests.functional.plugins.users import TestUser
 from tests.functional.src.utils import build_headers, login
 
 
 @pytest.mark.asyncio
-async def test_login_returns_tokens(client: Client, user: Mock) -> None:
+async def test_login_returns_tokens(client: Client, user: TestUser) -> None:
     response = await client.post(
         'api/v1/auth/login',
         body={'email': user.email, 'password': user.password},
@@ -22,7 +22,7 @@ async def test_login_returns_tokens(client: Client, user: Mock) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_auth_history_returns_history(client: Client, user: Mock) -> None:
+async def test_get_auth_history_returns_history(client: Client, user: TestUser) -> None:
     user_agent = f'test user agent {uuid4()}'
 
     access_token, _ = await login(user, client, user_agent)

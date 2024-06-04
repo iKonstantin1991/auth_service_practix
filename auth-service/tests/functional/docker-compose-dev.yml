@@ -5,6 +5,8 @@ services:
     image: redis:7.2.4
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     expose:
       - "6379"
     healthcheck:
@@ -17,6 +19,8 @@ services:
     image: postgres:16
     volumes:
       - pg_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
     expose:
       - "5432"
     env_file:
@@ -29,6 +33,8 @@ services:
 
   auth_api:
     build: ../../.
+    ports:
+      - "8000:8000"
     expose:
       - "8000"
     env_file:
@@ -38,13 +44,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-  tests:
-    build: .
-    env_file:
-      - .env
-    depends_on:
-      - auth_api
 
 volumes:
   pg_data:
