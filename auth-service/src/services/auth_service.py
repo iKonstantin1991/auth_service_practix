@@ -3,6 +3,7 @@ import time
 from typing import Annotated, List
 from uuid import uuid4, UUID
 from datetime import datetime
+from enum import Enum
 
 import jwt
 from sqlalchemy import select
@@ -23,8 +24,14 @@ _REFRESH_TOKEN_EXPIRE_SECONDS = 10 * 24 * 60 * 60  # 10 days
 logger = logging.getLogger(__name__)
 
 
+class TokenType(str, Enum):
+    ACCESS = "access"
+    REFRESH = "refresh"
+
+
 class TokenPayload(BaseModel):
     user_id: UUID
+    type: TokenType
     iat: float = Field(default_factory=time.time)
     exp: float
 
@@ -46,6 +53,7 @@ class AuthService:
         logger.info('Creating access token for user %s', user_id)
         payload = TokenPayload(
             user_id=user_id,
+            type=TokenType.ACCESS,
             exp=time.time() + _ACCESS_TOKEN_EXPIRE_SECONDS
         )
         return self._create_token(payload)
@@ -54,6 +62,7 @@ class AuthService:
         logger.info('Creating refresh token for user %s', user_id)
         payload = TokenPayload(
             user_id=user_id,
+            type=TokenType.REFRESH,
             exp=time.time() + _REFRESH_TOKEN_EXPIRE_SECONDS,
         )
         token = self._create_token(payload)
@@ -68,18 +77,24 @@ class AuthService:
     async def is_access_token_invalid(self, access_token: str) -> bool:
         logger.info('Checking if access token is invalid')
         try:
-            self._decode_token(access_token)
+            payload = self._decode_token(access_token)
         except jwt.exceptions.InvalidTokenError as e:
             logger.info('Access token is invalid: %s', e)
+            return True
+        if payload.type != TokenType.ACCESS:
+            logger.info('Access token is not of type access')
             return True
         return await self._token_storage.check_access_token_revoked(access_token)
 
     async def is_refresh_token_invalid(self, refresh_token: str) -> bool:
         logger.info('Checking if refresh token is invalid')
         try:
-            self._decode_token(refresh_token)
+            payload = self._decode_token(refresh_token)
         except jwt.exceptions.InvalidTokenError as e:
             logger.info('Refresh token is invalid: %s', e)
+            return True
+        if payload.type != TokenType.REFRESH:
+            logger.info('Refresh token is not of type refresh')
             return True
         return not await self._token_storage.check_refresh_token_exists(refresh_token)
 
