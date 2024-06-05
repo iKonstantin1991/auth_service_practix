@@ -12,11 +12,17 @@ Auth сервис для онлайн кинотеатра practix
 cd ./infra
 docker-compose --project-name auth-api up -d
 ```
+- применить миграции
 
-## Команды для создания суперюзера:
+```
+docker exec -it auth-api-auth_service-1 alembic upgrade head
+```
 
+## Команда для создания суперюзера:
 
-
+```
+docker exec -it -w /home/app/auth_api/src auth-api-auth_service-1 python create_superuser.py
+```
 
 ## Команды для запуска тестов
 
@@ -29,5 +35,5 @@ docker-compose --project-name auth-api-tests up -d
 ```
 
 ## Контакты
-https://github.com/iKonstantin1991
+https://github.com/iKonstantin1991<br>
 https://github.com/kcherednichenko
