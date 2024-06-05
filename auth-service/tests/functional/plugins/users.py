@@ -12,33 +12,30 @@ from tests.functional.plugins.models import User, Role
 class TestUser(BaseModel):
     __test__ = False
 
-    id: UUID
     email: str
     password: str
 
 
 @pytest_asyncio.fixture(name='user')
 async def fixture_user(db_session: AsyncSession) -> Iterator[TestUser]:
-    user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
-        id=user_id,
+        id=uuid4(),
         email=email,
         hashed_password=_hash_password(email, password),
     )
     db_session.add(user)
     await db_session.commit()
-    yield TestUser(id=user_id, email=email, password=password)
+    yield TestUser(email=email, password=password)
 
 
 @pytest_asyncio.fixture(name='superuser')
 async def fixture_superuser(db_session: AsyncSession, superuser_role: Role) -> Iterator[TestUser]:
-    user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
     user = User(
-        id=user_id,
+        id=uuid4(),
         email=email,
         hashed_password=_hash_password(email, password),
         roles=[superuser_role],
