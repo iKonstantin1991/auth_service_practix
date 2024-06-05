@@ -65,19 +65,6 @@ async def test_update_user_without_permission(client: Client, user: TestUser) ->
     assert response.status == HTTPStatus.FORBIDDEN
 
 
-# @pytest.mark.asyncio
-# async def test_user_get_his_owm_roles(client: Client, user_with_usual_role: TestUserWithRoles) -> None:
-#     print(user_with_usual_role)
-#     access_token, _ = await login(user_with_usual_role, client, user_agent=f'test user agent {uuid4()}')
-#
-#     response = await client.get(f'api/v1/users/{user_with_usual_role.id}/roles', headers=build_headers(access_token))
-#
-#     assert response.status == HTTPStatus.OK
-#     body = await response.json()
-#     assert body[0]['id'] == str(user_with_usual_role.roles[0]['id'])
-#     assert body[0]['name'] == user_with_usual_role.roles[0]['name']
-
-
 @pytest.mark.asyncio
 async def test_assign_existing_role_to_another_by_superuser(
         client: Client,
