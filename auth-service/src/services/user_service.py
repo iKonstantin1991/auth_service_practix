@@ -36,7 +36,7 @@ class UserService:
         return user
 
     async def get_roles(self, user_id: UUID) -> List[Role]:
-        logger.info(f'Getting user roles, user_id = {user_id}')
+        logger.info('Getting user roles, user_id = %s', user_id)
         user_roles_names = await self._db_session.execute(
             select(Role.id, Role.name)
             .join(
@@ -49,7 +49,7 @@ class UserService:
         return user_roles_names
 
     async def update(self, user_id: UUID, email: str, password: str) -> User:
-        logger.info(f'Updating user with id = {user_id}')
+        logger.info('Updating user with id = %s', user_id)
         hashed_password = self._password_service.get_password_hash(email, password)
         updated_user = await self._db_session.execute(
             update(User)
@@ -61,13 +61,13 @@ class UserService:
         return updated_user.scalar()
 
     async def has_role(self, user_id: UUID, role_id: UUID):
-        logger.info(f'Checking if user with id = {user_id} have role with id = {role_id}')
+        logger.info('Checking if user with id = %s have role with id = %s', user_id, role_id)
         return await self._db_session.scalar(
             select(user_role)
             .where(user_role.c.user_id == user_id, user_role.c.role_id == role_id))
 
     async def add_role_to_user(self, user_id: UUID, role_id: UUID) -> UUID:
-        logger.info(f'Adding role with id = {role_id} to user with id = {user_id}')
+        logger.info('Adding role with id = %s to user with id = %s', role_id, user_id)
         role_id = await self._db_session.execute(
             insert(user_role)
             .values(user_id=user_id, role_id=role_id)
@@ -77,7 +77,7 @@ class UserService:
         return role_id
 
     async def delete_role_from_user(self, user_id: UUID, role_id: UUID) -> None:
-        logger.info(f'Deleting role with id = {role_id} from user with id = {user_id}')
+        logger.info('Deleting role with id = %s from user with id = %s', role_id, user_id)
         await self._db_session.execute(
             delete(user_role)
             .where(user_role.c.user_id == user_id, user_role.c.role_id == role_id)
