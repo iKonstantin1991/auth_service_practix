@@ -108,4 +108,4 @@ async def test_logout_invalid_token(client: Client, user: TestUser):
 
     response = await client.post('api/v1/auth/logout', headers=build_headers(refresh_token))
 
-    assert response.status == HTTPStatus.NO_CONTENT
+    assert response.status == HTTPStatus.FORBIDDEN
