@@ -78,12 +78,12 @@ async def test_refresh_invalid_token(client: Client, user: TestUser) -> None:
 
 @pytest.mark.asyncio
 async def test_signup_new_user(client: Client) -> None:
-    user = TestUser(id=uuid4(), email='test_user@mail.ru', password='test_password')
-    response = await client.post('api/v1/auth/signup', body={'email': user.email, 'password': user.password})
+    email = 'test_user@mail.ru'
+    response = await client.post('api/v1/auth/signup', body={'email': email, 'password': 'test_password'})
 
     assert response.status == HTTPStatus.OK
     body = await response.json()
-    assert body['email'] == user.email
+    assert body['email'] == email
 
 
 @pytest.mark.asyncio
