@@ -4,6 +4,7 @@ import hashlib
 
 import pytest_asyncio
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.functional.plugins.models import User, Role
 
@@ -17,7 +18,7 @@ class TestUser(BaseModel):
 
 
 @pytest_asyncio.fixture(name='user')
-async def fixture_user(db_session) -> Iterator[TestUser]:
+async def fixture_user(db_session: AsyncSession) -> Iterator[TestUser]:
     user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
@@ -32,7 +33,7 @@ async def fixture_user(db_session) -> Iterator[TestUser]:
 
 
 @pytest_asyncio.fixture(name='superuser')
-async def fixture_superuser(db_session, superuser_role) -> Iterator[TestUser]:
+async def fixture_superuser(db_session: AsyncSession, superuser_role: Role) -> Iterator[TestUser]:
     user_id = uuid4()
     email = f'{uuid4()}@test.com'
     password = 'password'
@@ -44,15 +45,7 @@ async def fixture_superuser(db_session, superuser_role) -> Iterator[TestUser]:
     )
     db_session.add(user)
     await db_session.commit()
-    yield TestUser(id=user_id, email=email, password=password)
-
-
-@pytest_asyncio.fixture(scope='session', name='superuser_role')
-async def fixture_superuser_role(db_session) -> Iterator[Role]:
-    superuser_role = Role(id=uuid4(), name='superuser')
-    db_session.add(superuser_role)
-    await db_session.commit()
-    yield superuser_role
+    yield TestUser(email=email, password=password)
 
 
 def _hash_password(salt: str, password: str) -> str:

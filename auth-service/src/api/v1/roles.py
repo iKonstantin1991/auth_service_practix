@@ -17,7 +17,12 @@ async def get_roles(
     return await role_service.get()
 
 
-@router.post('/', response_model=RoleOut, dependencies=[Depends(check_user_staff)])
+@router.post(
+    '/',
+    response_model=RoleOut,
+    dependencies=[Depends(check_user_staff)],
+    status_code=status.HTTP_201_CREATED
+)
 async def create_role(
         new_role: RoleIn,
         role_service: Annotated[RoleService, Depends(get_role_service)],

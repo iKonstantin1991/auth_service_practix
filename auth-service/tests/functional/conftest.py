@@ -9,6 +9,7 @@ from tests.functional.settings import test_settings
 pytest_plugins = [
     'tests.functional.plugins.db',
     'tests.functional.plugins.users',
+    'tests.functional.plugins.roles',
     'tests.functional.plugins.redis',
 ]
 
@@ -28,6 +29,9 @@ class Client:
         self, path: str, body: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
     ) -> ClientResponse:
         return await self._session.post(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
+
+    async def delete(self, path: str, headers: Dict[str, str] | None = None) -> ClientResponse:
+        return await self._session.delete(f'{_BASE_URL}/{path}', headers=(headers or {}))
 
 
 @pytest_asyncio.fixture(scope='session')
