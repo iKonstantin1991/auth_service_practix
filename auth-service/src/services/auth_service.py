@@ -34,10 +34,12 @@ class TokenPayload(BaseModel):
     type: TokenType
     iat: float = Field(default_factory=time.time)
     exp: float
+    jti: UUID = Field(default_factory=uuid4)
 
-    def dict(self, *args, **kwargs) -> dict:
-        data = super().dict(*args, **kwargs)
+    def model_dump(self, *args, **kwargs) -> dict:
+        data = super().model_dump(*args, **kwargs)
         data["user_id"] = str(data["user_id"])
+        data["jti"] = str(data["jti"])
         return data
 
 
@@ -66,7 +68,7 @@ class AuthService:
             exp=time.time() + _REFRESH_TOKEN_EXPIRE_SECONDS,
         )
         token = self._create_token(payload)
-        await self._token_storage.save_refresh_token(token, _REFRESH_TOKEN_EXPIRE_SECONDS)
+        await self._token_storage.save_refresh_jti(payload.jti, _REFRESH_TOKEN_EXPIRE_SECONDS)
         return token
 
 
@@ -84,7 +86,7 @@ class AuthService:
         if payload.type != TokenType.ACCESS:
             logger.info('Access token is not of type access')
             return True
-        return await self._token_storage.check_access_token_revoked(access_token)
+        return await self._token_storage.check_access_token_revoked(payload.jti)
 
     async def is_refresh_token_invalid(self, refresh_token: str) -> bool:
         logger.info('Checking if refresh token is invalid')
@@ -96,12 +98,13 @@ class AuthService:
         if payload.type != TokenType.REFRESH:
             logger.info('Refresh token is not of type refresh')
             return True
-        return not await self._token_storage.check_refresh_token_exists(refresh_token)
+        return not await self._token_storage.check_refresh_token_exists(payload.jti)
 
     async def invalidate_access_token(self, access_token: str) -> None:
         logger.info('Invalidating access token')
-        ttl = int(self._decode_token(access_token).exp - time.time())
-        await self._token_storage.save_revoked_access_token(access_token, ttl)
+        payload = self._decode_token(access_token)
+        ttl = int(payload.exp - time.time())
+        await self._token_storage.save_revoked_access_jti(payload.jti, ttl)
 
     def get_user_id(self, access_token: str) -> UUID:
         payload = self._decode_token(access_token)
