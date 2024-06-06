@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class UserCredentials(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=255)
+    password: str = Field(min_length=8, max_length=50)
 
 
 class UserIn(UserCredentials):
