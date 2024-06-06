@@ -1,7 +1,8 @@
 from uuid import UUID
-from typing import List, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, Header, HTTPException, status
+from fastapi_pagination import Page
 
 from services.auth_service import get_auth_service, AuthService
 from services.user_service import get_user_service, UserService
@@ -63,9 +64,9 @@ async def refresh(
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.get('/history', response_model=List[AuthHistory])
+@router.get('/history', response_model=Page[AuthHistory])
 async def history(
     request_user_id: Annotated[UUID, Depends(get_request_user_id)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> List[AuthHistory]:
+) -> Page[AuthHistory]:
     return await auth_service.get_history(request_user_id)

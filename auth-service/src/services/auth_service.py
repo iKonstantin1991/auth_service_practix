@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 from fastapi import Depends
+from fastapi_pagination.ext.sqlalchemy import paginate
 
 from db.postgres import get_session
 from core.config import settings
@@ -109,9 +110,9 @@ class AuthService:
 
     async def get_history(self, user_id: UUID) -> List[UserLogin]:
         logger.info('Getting auth history for user %s', user_id)
-        return await self._db_session.scalars(select(UserLogin)
-                                              .where(UserLogin.user_id == user_id)
-                                              .order_by(UserLogin.date))
+        return await paginate(self._db_session,
+                              select(UserLogin).where(UserLogin.user_id == user_id)
+                                               .order_by(UserLogin.date.desc()))
 
     async def update_history(self, user_id: UUID, user_agent: str | None) -> UserLogin:
         logger.info('Updating auth history for user %s, user agent: %s', user_id, user_agent)
