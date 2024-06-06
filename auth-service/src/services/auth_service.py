@@ -8,7 +8,7 @@ from enum import Enum
 import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from fastapi import Depends
 
 from db.postgres import get_session
@@ -29,15 +29,33 @@ class TokenType(str, Enum):
     REFRESH = "refresh"
 
 
-class TokenPayload(BaseModel):
+class BaseTokenPayload(BaseModel):
     user_id: UUID
     type: TokenType
     iat: float = Field(default_factory=time.time)
     exp: float
+    jti: UUID = Field(default_factory=uuid4)
 
-    def dict(self, *args, **kwargs) -> dict:
-        data = super().dict(*args, **kwargs)
+    def model_dump(self, *args, **kwargs) -> dict:
+        data = super().model_dump(*args, **kwargs)
         data["user_id"] = str(data["user_id"])
+        data["jti"] = str(data["jti"])
+        return data
+
+
+class AccessTokenPayload(BaseTokenPayload):
+    type: TokenType = TokenType.ACCESS
+    exp: float = Field(default_factory=lambda: time.time() + _ACCESS_TOKEN_EXPIRE_SECONDS)
+
+
+class RefreshTokenPayload(BaseTokenPayload):
+    type: TokenType = TokenType.REFRESH
+    exp: float = Field(default_factory=lambda: time.time() + _REFRESH_TOKEN_EXPIRE_SECONDS)
+    access_jti: UUID
+
+    def model_dump(self, *args, **kwargs) -> dict:
+        data = super().model_dump(*args, **kwargs)
+        data["access_jti"] = str(data["access_jti"])
         return data
 
 
@@ -49,62 +67,58 @@ class AuthService:
         self._token_storage = token_storage
         self._password_service = password_service
 
-    def create_access_token(self, user_id: UUID) -> str:
-        logger.info('Creating access token for user %s', user_id)
-        payload = TokenPayload(
-            user_id=user_id,
-            type=TokenType.ACCESS,
-            exp=time.time() + _ACCESS_TOKEN_EXPIRE_SECONDS
-        )
-        return self._create_token(payload)
-
-    async def create_refresh_token(self, user_id: UUID) -> str:
-        logger.info('Creating refresh token for user %s', user_id)
-        payload = TokenPayload(
-            user_id=user_id,
-            type=TokenType.REFRESH,
-            exp=time.time() + _REFRESH_TOKEN_EXPIRE_SECONDS,
-        )
-        token = self._create_token(payload)
-        await self._token_storage.save_refresh_token(token, _REFRESH_TOKEN_EXPIRE_SECONDS)
-        return token
-
+    async def create_token_pair(self, user_id: UUID) -> tuple[str, str]:
+        logger.info('Creating token pair for user %s', user_id)
+        access_token_payload = AccessTokenPayload(user_id=user_id)
+        refresh_token_payload = RefreshTokenPayload(user_id=user_id, access_jti=access_token_payload.jti)
+        access_token = self._create_token(access_token_payload)
+        refresh_token = self._create_token(refresh_token_payload)
+        await self._token_storage.save_refresh_jti(refresh_token_payload.jti, _REFRESH_TOKEN_EXPIRE_SECONDS)
+        return access_token, refresh_token
 
     def verify_password(self, user_email: str, plain_password: str, hashed_password: str) -> bool:
         logger.info('Verifying password for user with email %s', user_email)
         return self._password_service.verify_password(user_email, plain_password, hashed_password)
 
-    async def is_access_token_invalid(self, access_token: str) -> bool:
-        logger.info('Checking if access token is invalid')
+    async def is_access_token_valid(self, access_token: str) -> bool:
+        logger.info('Checking if access token is valid')
         try:
-            payload = self._decode_token(access_token)
-        except jwt.exceptions.InvalidTokenError as e:
+            payload = self._decode_access_token(access_token)
+        except (jwt.exceptions.InvalidTokenError, ValidationError) as e:
             logger.info('Access token is invalid: %s', e)
-            return True
+            return False
         if payload.type != TokenType.ACCESS:
             logger.info('Access token is not of type access')
-            return True
-        return await self._token_storage.check_access_token_revoked(access_token)
+            return False
+        return not await self._token_storage.check_access_token_revoked(payload.jti)
 
-    async def is_refresh_token_invalid(self, refresh_token: str) -> bool:
-        logger.info('Checking if refresh token is invalid')
+    async def check_is_valid_and_remove_refresh_token(self, refresh_token: str) -> bool:
+        logger.info('Checking if refresh token is valid and remove')
         try:
-            payload = self._decode_token(refresh_token)
-        except jwt.exceptions.InvalidTokenError as e:
+            payload = self._decode_refresh_token(refresh_token)
+        except (jwt.exceptions.InvalidTokenError, ValidationError) as e:
             logger.info('Refresh token is invalid: %s', e)
-            return True
+            return False
         if payload.type != TokenType.REFRESH:
             logger.info('Refresh token is not of type refresh')
-            return True
-        return not await self._token_storage.check_refresh_token_exists(refresh_token)
+            return False
+        return await self._token_storage.check_refresh_token_exists(payload.jti)
 
-    async def invalidate_access_token(self, access_token: str) -> None:
-        logger.info('Invalidating access token')
-        ttl = int(self._decode_token(access_token).exp - time.time())
-        await self._token_storage.save_revoked_access_token(access_token, ttl)
+    async def logout(self, refresh_token: str) -> None:
+        payload = self._decode_refresh_token(refresh_token)
+        logger.info('Revoking refresh token with jti %s and access token with jti %s', payload.jti, payload.access_jti)
+        await self._token_storage.remove_refresh_jti(payload.jti)
+        # access token is issued at the same time as refresh token
+        access_token_ttl = int(payload.iat + _ACCESS_TOKEN_EXPIRE_SECONDS - time.time())
+        if access_token_ttl > 0:
+            await self._token_storage.save_revoked_access_jti(payload.access_jti, access_token_ttl)
 
-    def get_user_id(self, access_token: str) -> UUID:
-        payload = self._decode_token(access_token)
+    def get_user_id_from_access_token(self, token: str) -> UUID:
+        payload = self._decode_access_token(token)
+        return payload.user_id
+
+    def get_user_id_from_refresh_token(self, token: str) -> UUID:
+        payload = self._decode_refresh_token(token)
         return payload.user_id
 
     async def get_history(self, user_id: UUID) -> List[UserLogin]:
@@ -120,11 +134,14 @@ class AuthService:
         await self._db_session.commit()
         return user_login
 
-    def _create_token(self, payload: TokenPayload) -> str:
+    def _create_token(self, payload: BaseTokenPayload) -> str:
         return jwt.encode(payload.dict(), settings.secret_key, algorithm=_ALGORITHM)
 
-    def _decode_token(self, token: str) -> TokenPayload:
-        return TokenPayload(**jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM]))
+    def _decode_access_token(self, token: str) -> AccessTokenPayload:
+        return AccessTokenPayload(**jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM]))
+
+    def _decode_refresh_token(self, token: str) -> RefreshTokenPayload:
+        return RefreshTokenPayload(**jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM]))
 
 
 def get_auth_service(
