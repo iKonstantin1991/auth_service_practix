@@ -28,6 +28,14 @@ class TokenStorage:
             logger.error('Failed to save refresh jti %s in cache: %s', jti, e)
             raise
 
+    async def remove_refresh_jti(self, jti: UUID) -> None:
+        logger.info('Removing refresh jti %s from cache', jti)
+        try:
+            await self.cache_storage.delete(self._refresh_jti_cache_key(jti))
+        except RedisError as e:
+            logger.error('Failed to remove refresh jti %s from cache: %s', jti, e)
+            raise
+
     async def check_refresh_token_exists(self, jti: UUID) -> bool:
         logger.info('Checking if refresh jti %s exists in cache', jti)
         try:

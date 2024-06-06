@@ -95,17 +95,17 @@ async def test_signup_existing_user(client: Client, user: TestUser) -> None:
 
 @pytest.mark.asyncio
 async def test_logout_success(client: Client, user: TestUser):
-    access_token, _ = await login(user, client, user_agent=f'test user agent {uuid4()}')
+    _, refresh_token = await login(user, client, user_agent=f'test user agent {uuid4()}')
 
-    response = await client.post('api/v1/auth/logout', headers=build_headers(access_token))
+    response = await client.post('api/v1/auth/logout', headers=build_headers(refresh_token))
 
     assert response.status == HTTPStatus.NO_CONTENT
 
 
 @pytest.mark.asyncio
 async def test_logout_invalid_token(client: Client, user: TestUser):
-    _, refresh_token = await login(user, client, user_agent=f'test user agent {uuid4()}')
+    access_token, _ = await login(user, client, user_agent=f'test user agent {uuid4()}')
 
-    response = await client.post('api/v1/auth/logout', headers=build_headers(refresh_token))
+    response = await client.post('api/v1/auth/logout', headers=build_headers(access_token))
 
     assert response.status == HTTPStatus.FORBIDDEN
