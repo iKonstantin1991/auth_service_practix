@@ -4,6 +4,7 @@ import logging
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
+from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 
 from core.config import settings
@@ -29,6 +30,7 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan,
 )
+add_pagination(app)
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
