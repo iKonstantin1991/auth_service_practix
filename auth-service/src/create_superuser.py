@@ -38,7 +38,6 @@ async def create_superuser():
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-    Base = declarative_base()
 
     async with async_session() as session:
         user_id = uuid.uuid4()
@@ -46,7 +45,7 @@ async def create_superuser():
 
         role = await session.execute(select(Role).where(Role.name == SUPERUSER))
         role = role.scalars().all()
-        message = ''  # pylint: disable=invalid-name
+        message = ''
         if not role:
             role_id = uuid.uuid4()
             await session.execute(insert(Role).values(id=role_id, name=SUPERUSER))
