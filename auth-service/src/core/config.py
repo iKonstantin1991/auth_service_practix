@@ -23,5 +23,7 @@ class Settings(BaseSettings):
 
     secret_key: str
 
+    echo_in_db: bool = True
+
 
 settings = Settings()
