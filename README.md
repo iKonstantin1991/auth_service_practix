@@ -20,7 +20,7 @@ docker exec -it auth-api-auth_service-1 alembic upgrade head
 ### Команда для создания суперюзера:
 
 ```
-docker exec -it -w /home/app/auth_api/src auth-api-auth_service-1 python create_superuser.py
+docker-compose exec auth_service python /home/app/auth_api/src/create_superuser.py
 ```
 
 ### Команды для запуска тестов
