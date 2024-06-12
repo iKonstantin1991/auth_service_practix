@@ -1,4 +1,4 @@
-https://github.com/iKonstantin1991/Auth_sprint_1
+https://github.com/iKonstantin1991/auth_service_practix
 
 ## Auth сервис для онлайн кинотеатра practix 
 
