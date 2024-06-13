@@ -14,7 +14,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 
 from db.postgres import get_session
 from core.config import settings
-from models.entity import UserLogin
+from models.entity import UserLogin, Role
 from services.password_service import PasswordService, get_password_service
 from storage.token_storage import TokenStorage, get_token_storage
 
@@ -47,6 +47,7 @@ class BaseTokenPayload(BaseModel):
 class AccessTokenPayload(BaseTokenPayload):
     type: TokenType = TokenType.ACCESS
     exp: float = Field(default_factory=lambda: time.time() + _ACCESS_TOKEN_EXPIRE_SECONDS)
+    roles: List[str]
 
 
 class RefreshTokenPayload(BaseTokenPayload):
@@ -68,9 +69,9 @@ class AuthService:
         self._token_storage = token_storage
         self._password_service = password_service
 
-    async def create_token_pair(self, user_id: UUID) -> tuple[str, str]:
+    async def create_token_pair(self, user_id: UUID, roles: List[Role]) -> tuple[str, str]:
         logger.info('Creating token pair for user %s', user_id)
-        access_token_payload = AccessTokenPayload(user_id=user_id)
+        access_token_payload = AccessTokenPayload(user_id=user_id, roles=[r.name for r in roles])
         refresh_token_payload = RefreshTokenPayload(user_id=user_id, access_jti=access_token_payload.jti)
         access_token = self._create_token(access_token_payload)
         refresh_token = self._create_token(refresh_token_payload)

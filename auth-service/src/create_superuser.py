@@ -7,7 +7,7 @@ import typer
 
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from models.entity import User, Role, user_role
 from core.config import settings

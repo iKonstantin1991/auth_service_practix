@@ -4,6 +4,7 @@ from typing import Annotated, List
 
 from fastapi import Depends
 from sqlalchemy import select, update, insert, delete
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
@@ -21,11 +22,11 @@ class UserService:
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         logger.info('Getting user by id: %s', user_id)
-        return await self._db_session.scalar(select(User).where(User.id == user_id))
+        return await self._db_session.scalar(select(User).where(User.id == user_id).options(joinedload(User.roles)))
 
     async def get_by_email(self, email: str) -> User | None:
         logger.info('Getting user by email: %s', email)
-        return await self._db_session.scalar(select(User).where(User.email == email))
+        return await self._db_session.scalar(select(User).where(User.email == email).options(joinedload(User.roles)))
 
     async def create(self, email: str, password: str) -> User:
         logger.info('Creating user with email: %s', email)
