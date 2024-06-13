@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     redis_host: str = '127.0.0.1'
     redis_port: int = 6379
 
-    secret_key: str
+    private_key: bytes
+    public_key: bytes
 
     echo_in_db: bool = True
 

@@ -18,7 +18,7 @@ from models.entity import UserLogin, Role
 from services.password_service import PasswordService, get_password_service
 from storage.token_storage import TokenStorage, get_token_storage
 
-_ALGORITHM = "HS256"
+_ALGORITHM = "RS256"
 _ACCESS_TOKEN_EXPIRE_SECONDS = 24 * 60 * 60  # 1 day
 _REFRESH_TOKEN_EXPIRE_SECONDS = 10 * 24 * 60 * 60  # 10 days
 
@@ -137,13 +137,13 @@ class AuthService:
         return user_login
 
     def _create_token(self, payload: BaseTokenPayload) -> str:
-        return jwt.encode(payload.dict(), settings.secret_key, algorithm=_ALGORITHM)
+        return jwt.encode(payload.dict(), settings.private_key, algorithm=_ALGORITHM)
 
     def _decode_access_token(self, token: str) -> AccessTokenPayload:
-        return AccessTokenPayload(**jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM]))
+        return AccessTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
 
     def _decode_refresh_token(self, token: str) -> RefreshTokenPayload:
-        return RefreshTokenPayload(**jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM]))
+        return RefreshTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
 
 
 def get_auth_service(
