@@ -14,7 +14,7 @@ class RoleService:
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
 
-    STAFF_ROLES = ['superuser', 'admin']
+    STAFF_ROLES = ['superuser', 'admin', 'service']
     EXISTING_ROLES = STAFF_ROLES + ['user']
 
     async def is_staff(self, user_roles: List[Role]) -> bool:
