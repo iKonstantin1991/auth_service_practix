@@ -2,11 +2,13 @@ from contextlib import asynccontextmanager
 import logging
 
 import uvicorn
+import aiohttp
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 
+import http_client
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
@@ -19,8 +21,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    http_client.session = aiohttp.ClientSession()
     yield
     await redis.redis.close()
+    await http_client.session.close()
 
 
 app = FastAPI(
