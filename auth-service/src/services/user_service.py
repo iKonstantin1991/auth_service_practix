@@ -2,13 +2,16 @@ import logging
 from uuid import uuid4, UUID
 from typing import Annotated, List
 
+from aiohttp import ClientSession
 from fastapi import Depends
 from sqlalchemy import select, update, insert, delete
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
-from models.entity import User, Role, user_role
+from http_client import get_session as get_http_session
+from core.config import settings
+from models.entity import User, YandexUser, Role, user_role
 from services.password_service import PasswordService, get_password_service
 
 
@@ -16,9 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
-    def __init__(self, db_session: AsyncSession, password_service: PasswordService):
+    def __init__(
+        self, db_session: AsyncSession, password_service: PasswordService, http_session: ClientSession
+    ) -> None:
         self._db_session = db_session
         self._password_service = password_service
+        self._http_session = http_session
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         logger.info('Getting user by id: %s', user_id)
@@ -33,6 +39,25 @@ class UserService:
         hashed_password = self._password_service.get_password_hash(email, password)
         user = User(id=uuid4(), email=email, hashed_password=hashed_password)
         self._db_session.add(user)
+        await self._db_session.commit()
+        return user
+
+    async def get_or_create_from_yandex(self, code: str) -> User:
+        logger.info('Getting or creating user from yandex')
+        token = await self._get_yandex_user_data_access_token(code)
+        user_info = await self._get_yandex_user_info_by_token(token)
+        yandex_user_id, email = user_info['id'], user_info['default_email']
+        yandex_user = await self._db_session.scalar(select(YandexUser).where(YandexUser.id == yandex_user_id))
+        if yandex_user:
+            logger.info('Yandex user found, id: %s', yandex_user_id)
+            user = await self.get_by_id(yandex_user.user_id)
+            return user
+        logger.info('Yandex user with id %s not found, creating new user', yandex_user_id)
+        hashed_password = self._password_service.get_password_hash(email, str(uuid4()))
+        user = User(id=uuid4(), email=email, hashed_password=hashed_password, roles=[])
+        yandex_user = YandexUser(id=yandex_user_id, user_id=user.id)
+        self._db_session.add(user)
+        self._db_session.add(yandex_user)
         await self._db_session.commit()
         return user
 
@@ -85,9 +110,34 @@ class UserService:
         )
         await self._db_session.commit()
 
+    async def _get_yandex_user_data_access_token(self, code: str) -> str:
+        logger.info('Getting user data access token')
+        async with self._http_session.post(
+            'https://oauth.yandex.ru/token',
+            data={
+                'grant_type': 'authorization_code',
+                'code': code,
+                'client_id': settings.yandex_client_id,
+                'client_secret': settings.yandex_client_secret,
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            raise_for_status=True
+        ) as response:
+            return (await response.json())['access_token']
+
+
+    async def _get_yandex_user_info_by_token(self, token: str) -> dict:
+        logger.info('Getting user info by token')
+        async with self._http_session.get(
+            'https://login.yandex.ru/info',
+            headers={'Authorization': f'OAuth {token}'},
+        ) as response:
+            return await response.json()
+
 
 def get_user_service(
     db_session: Annotated[AsyncSession, Depends(get_session)],
     password_service: Annotated[PasswordService, Depends(get_password_service)],
+    http_session: Annotated[ClientSession, Depends(get_http_session)],
 ) -> UserService:
-    return UserService(db_session, password_service)
+    return UserService(db_session, password_service, http_session)
