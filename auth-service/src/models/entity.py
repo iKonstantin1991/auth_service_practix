@@ -2,12 +2,11 @@ import uuid
 from typing import List
 from datetime import datetime
 
-from sqlalchemy import Column, Table, ForeignKey, Text, func
+from sqlalchemy import Column, Table, ForeignKey, Text, func, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from db.postgres import Base
-
 
 user_role = Table(
     'user_role',
@@ -43,11 +42,35 @@ class Role(Base):
         return f'<Role {self.name}>'
 
 
+def create_user_login_partition(target, connection, **kw) -> None:
+    connection.execute(
+        text(
+            """CREATE TABLE IF NOT EXISTS "user_logins_mobile" PARTITION OF "user_logins" FOR VALUES IN ('mobile')"""
+        )
+    )
+    connection.execute(
+        text(
+            """CREATE TABLE IF NOT EXISTS "user_logins_tablet" PARTITION OF "user_logins" FOR VALUES IN ('tablet')"""
+        )
+    )
+    connection.execute(
+        text("""CREATE TABLE IF NOT EXISTS "user_logins_pc" PARTITION OF "user_logins" FOR VALUES IN ('pc')""")
+    )
+
+
 class UserLogin(Base):
     __tablename__ = 'user_logins'
+    __table_args__ = (
+        UniqueConstraint('id', 'user_device_type'),
+        {
+            'postgresql_partition_by': 'LIST (user_device_type)',
+            'listeners': [('after_create', create_user_login_partition)],
+        }
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     user_agent: Mapped[str | None] = mapped_column(Text)
+    user_device_type: Mapped[str] = mapped_column(Text, primary_key=True)
     date: Mapped[datetime] = mapped_column(nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     user: Mapped['User'] = relationship(back_populates='logins')
