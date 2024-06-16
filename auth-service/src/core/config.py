@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     private_key: bytes
     public_key: bytes
 
+    jaeger_host: str = '127.0.0.1'
+    jaeger_port: int = 6831
+
     echo_in_db: bool = True
 
 
