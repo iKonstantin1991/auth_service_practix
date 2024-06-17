@@ -137,20 +137,9 @@ class AuthService:
                               select(UserLogin).where(UserLogin.user_id == user_id)
                                                .order_by(UserLogin.date.desc()))
 
-    @staticmethod
-    def get_user_device_type(user_agent):
-        user_agent = parse(user_agent)
-        if user_agent.is_mobile:
-            return UserDeviceType.MOBILE
-        if user_agent.is_tablet:
-            return UserDeviceType.TABLET
-        if user_agent.is_pc:
-            return UserDeviceType.PC
-        return UserDeviceType.UNKNOWN
-
     async def update_history(self, user_id: UUID, user_agent: str | None) -> UserLogin:
         logger.info('Updating auth history for user %s, user agent: %s', user_id, user_agent)
-        user_device_type = self.get_user_device_type(user_agent)
+        user_device_type = self._get_user_device_type(user_agent)
         user_login = UserLogin(
             id=uuid4(),
             user_agent=user_agent,
@@ -161,14 +150,30 @@ class AuthService:
         await self._db_session.commit()
         return user_login
 
-    def _create_token(self, payload: BaseTokenPayload) -> str:
+    @staticmethod
+    def _create_token(payload: BaseTokenPayload) -> str:
         return jwt.encode(payload.dict(), settings.private_key, algorithm=_ALGORITHM)
 
-    def _decode_access_token(self, token: str) -> AccessTokenPayload:
+    @staticmethod
+    def _decode_access_token(token: str) -> AccessTokenPayload:
         return AccessTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
 
-    def _decode_refresh_token(self, token: str) -> RefreshTokenPayload:
+    @staticmethod
+    def _decode_refresh_token(token: str) -> RefreshTokenPayload:
         return RefreshTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
+
+    @staticmethod
+    def _get_user_device_type(user_agent: str | None):
+        if not user_agent:
+            return UserDeviceType.UNKNOWN
+        user_agent = parse(user_agent)
+        if user_agent.is_mobile:
+            return UserDeviceType.MOBILE
+        if user_agent.is_tablet:
+            return UserDeviceType.TABLET
+        if user_agent.is_pc:
+            return UserDeviceType.PC
+        return UserDeviceType.UNKNOWN
 
 
 def get_auth_service(
