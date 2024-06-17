@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/redirect')
-async def redirect():
+async def redirect() -> RedirectResponse:
     return RedirectResponse('https://oauth.yandex.ru/authorize?'
                             'response_type=code&'
                             f'client_id={settings.yandex_client_id}')
