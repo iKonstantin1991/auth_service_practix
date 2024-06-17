@@ -42,6 +42,16 @@ class Role(Base):
         return f'<Role {self.name}>'
 
 
+class YandexUser(Base):
+    __tablename__ = 'yandex_users'
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+
+    def __repr__(self) -> str:
+        return f'<YandexUser {self.id}>'
+
+
 class UserLogin(Base):
     __tablename__ = 'user_logins'
     __table_args__ = (
