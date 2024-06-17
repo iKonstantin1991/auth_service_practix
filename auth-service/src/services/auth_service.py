@@ -17,12 +17,20 @@ from core.config import settings
 from models.entity import UserLogin, Role
 from services.password_service import PasswordService, get_password_service
 from storage.token_storage import TokenStorage, get_token_storage
+from user_agents import parse
 
 _ALGORITHM = "RS256"
 _ACCESS_TOKEN_EXPIRE_SECONDS = 24 * 60 * 60  # 1 day
 _REFRESH_TOKEN_EXPIRE_SECONDS = 10 * 24 * 60 * 60  # 10 days
 
 logger = logging.getLogger(__name__)
+
+
+class UserDeviceType(str, Enum):
+    MOBILE = 'mobile'
+    TABLET = 'tablet'
+    PC = 'pc'
+    UNKNOWN = 'unknown'
 
 
 class TokenType(str, Enum):
@@ -131,19 +139,41 @@ class AuthService:
 
     async def update_history(self, user_id: UUID, user_agent: str | None) -> UserLogin:
         logger.info('Updating auth history for user %s, user agent: %s', user_id, user_agent)
-        user_login = UserLogin(id=uuid4(), user_agent=user_agent, user_id=user_id, date=datetime.utcnow())
+        user_device_type = self._get_user_device_type(user_agent)
+        user_login = UserLogin(
+            id=uuid4(),
+            user_agent=user_agent,
+            user_id=user_id,
+            date=datetime.utcnow(),
+            user_device_type=user_device_type)
         self._db_session.add(user_login)
         await self._db_session.commit()
         return user_login
 
-    def _create_token(self, payload: BaseTokenPayload) -> str:
+    @staticmethod
+    def _create_token(payload: BaseTokenPayload) -> str:
         return jwt.encode(payload.dict(), settings.private_key, algorithm=_ALGORITHM)
 
-    def _decode_access_token(self, token: str) -> AccessTokenPayload:
+    @staticmethod
+    def _decode_access_token(token: str) -> AccessTokenPayload:
         return AccessTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
 
-    def _decode_refresh_token(self, token: str) -> RefreshTokenPayload:
+    @staticmethod
+    def _decode_refresh_token(token: str) -> RefreshTokenPayload:
         return RefreshTokenPayload(**jwt.decode(token, settings.public_key, algorithms=[_ALGORITHM]))
+
+    @staticmethod
+    def _get_user_device_type(user_agent: str | None):
+        if not user_agent:
+            return UserDeviceType.UNKNOWN
+        user_agent = parse(user_agent)
+        if user_agent.is_mobile:
+            return UserDeviceType.MOBILE
+        if user_agent.is_tablet:
+            return UserDeviceType.TABLET
+        if user_agent.is_pc:
+            return UserDeviceType.PC
+        return UserDeviceType.UNKNOWN
 
 
 def get_auth_service(
