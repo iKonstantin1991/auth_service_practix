@@ -6,10 +6,12 @@ from fastapi_pagination import Page
 
 from services.auth_service import get_auth_service, AuthService
 from services.user_service import get_user_service, UserService
+from api.v1.yandex.auth import router as yandex_router
 from api.v1.dependencies import get_token, get_request_user_id, revoke_tokens
 from api.v1.schemas import UserIn, UserOut, UserCredentials, Token, AuthHistory
 
 router = APIRouter()
+router.include_router(yandex_router, prefix='/yandex', tags=['yandex'])
 
 
 @router.post('/signup', response_model=UserOut)

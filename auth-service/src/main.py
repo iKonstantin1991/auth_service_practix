@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 import logging
 
 import uvicorn
+import aiohttp
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
@@ -13,6 +14,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
+import http_client
 from core.config import settings
 from core.logger import LOGGING
 from db import redis
@@ -33,8 +35,10 @@ def configure_tracer() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    http_client.session = aiohttp.ClientSession()
     yield
     await redis.redis.close()
+    await http_client.session.close()
 
 
 configure_tracer()
