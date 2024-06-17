@@ -69,17 +69,6 @@ class RefreshTokenPayload(BaseTokenPayload):
         return data
 
 
-def get_user_device_type(user_agent):
-    user_agent = parse(user_agent)
-    if user_agent.is_mobile:
-        return UserDeviceType.MOBILE
-    if user_agent.is_tablet:
-        return UserDeviceType.TABLET
-    if user_agent.is_pc:
-        return UserDeviceType.PC
-    return UserDeviceType.UNKNOWN
-
-
 class AuthService:
     def __init__(
         self, db_session: AsyncSession, token_storage: TokenStorage, password_service: PasswordService
@@ -148,9 +137,20 @@ class AuthService:
                               select(UserLogin).where(UserLogin.user_id == user_id)
                                                .order_by(UserLogin.date.desc()))
 
+    @staticmethod
+    def get_user_device_type(user_agent):
+        user_agent = parse(user_agent)
+        if user_agent.is_mobile:
+            return UserDeviceType.MOBILE
+        if user_agent.is_tablet:
+            return UserDeviceType.TABLET
+        if user_agent.is_pc:
+            return UserDeviceType.PC
+        return UserDeviceType.UNKNOWN
+
     async def update_history(self, user_id: UUID, user_agent: str | None) -> UserLogin:
         logger.info('Updating auth history for user %s, user agent: %s', user_id, user_agent)
-        user_device_type = get_user_device_type(user_agent)
+        user_device_type = self.get_user_device_type(user_agent)
         user_login = UserLogin(
             id=uuid4(),
             user_agent=user_agent,
