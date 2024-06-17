@@ -18,8 +18,8 @@ async def redirect():
                             f'client_id={settings.yandex_client_id}')
 
 
-@router.get('/code', response_model=Token)
-async def get_code(
+@router.get('/tokens', response_model=Token)
+async def get_tokens(
     code: str,
     user_service: Annotated[UserService, Depends(get_user_service)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
