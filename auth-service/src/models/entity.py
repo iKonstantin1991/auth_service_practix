@@ -42,29 +42,12 @@ class Role(Base):
         return f'<Role {self.name}>'
 
 
-def create_user_login_partition(target, connection, **kw) -> None:
-    connection.execute(
-        text(
-            """CREATE TABLE IF NOT EXISTS "user_logins_mobile" PARTITION OF "user_logins" FOR VALUES IN ('mobile')"""
-        )
-    )
-    connection.execute(
-        text(
-            """CREATE TABLE IF NOT EXISTS "user_logins_tablet" PARTITION OF "user_logins" FOR VALUES IN ('tablet')"""
-        )
-    )
-    connection.execute(
-        text("""CREATE TABLE IF NOT EXISTS "user_logins_pc" PARTITION OF "user_logins" FOR VALUES IN ('pc')""")
-    )
-
-
 class UserLogin(Base):
     __tablename__ = 'user_logins'
     __table_args__ = (
         UniqueConstraint('id', 'user_device_type'),
         {
             'postgresql_partition_by': 'LIST (user_device_type)',
-            'listeners': [('after_create', create_user_login_partition)],
         }
     )
 
