@@ -2,10 +2,16 @@ from contextlib import asynccontextmanager
 import logging
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 from core.config import settings
 from core.logger import LOGGING
@@ -16,6 +22,14 @@ from api.v1 import auth, roles, users
 logger = logging.getLogger(__name__)
 
 
+def configure_tracer() -> None:
+    provider = TracerProvider(resource=Resource(attributes={"service.name": settings.project_name}))
+    processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=f'http://{settings.jaeger_host}:{settings.jaeger_port}',
+                                                    insecure=True))
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
@@ -23,6 +37,7 @@ async def lifespan(_: FastAPI):
     await redis.redis.close()
 
 
+configure_tracer()
 app = FastAPI(
     title=settings.project_name,
     docs_url='/api/openapi',
@@ -31,10 +46,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 add_pagination(app)
+FastAPIInstrumentor.instrument_app(app)
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
+
+
+@app.middleware('http')
+async def before_request(request: Request, call_next):
+    request_id = request.headers.get('X-Request-Id')
+    if not request_id:
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                              content={'detail': 'X-Request-Id is required'})
+    return await call_next(request)
 
 
 @app.exception_handler(Exception)
