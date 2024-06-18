@@ -8,8 +8,10 @@ from tests.functional.settings import test_settings
 from tests.functional.plugins.models import Base
 
 
-dsn = (f'postgresql+asyncpg://{test_settings.postgres_user}:{test_settings.postgres_password}@'
-       f'{test_settings.postgres_host}:{test_settings.postgres_port}/{test_settings.postgres_db}')
+dsn = (
+    f'postgresql+asyncpg://{test_settings.postgres_user}:{test_settings.postgres_password}@'
+    f'{test_settings.postgres_host}:{test_settings.postgres_port}/{test_settings.postgres_db}'
+)
 engine = create_async_engine(dsn, future=True)
 async_session = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
@@ -22,7 +24,7 @@ async def db_session() -> Iterator[AsyncSession]:
         yield session
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope='session', autouse=True)
 async def db_tables() -> Iterator[None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

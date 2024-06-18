@@ -17,5 +17,4 @@ class TestSettings(BaseSettings):
     redis_port: int = 6379
 
 
-
 test_settings = TestSettings()

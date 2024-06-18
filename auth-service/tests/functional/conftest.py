@@ -22,22 +22,43 @@ class Client:
         self._session = session
 
     async def get(
-        self, path: str, params: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
+        self,
+        path: str,
+        params: Dict[str, str] | None = None,
+        headers: Dict[str, str] | None = None,
     ) -> ClientResponse:
-        return await self._session.get(f'{_BASE_URL}/{path}', params=(params or {}), headers=(headers or {}))
+        return await self._session.get(
+            f'{_BASE_URL}/{path}',
+            params=(params or {}),
+            headers=(headers or {}),
+        )
 
     async def post(
-        self, path: str, body: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
+        self,
+        path: str,
+        body: Dict[str, str] | None = None,
+        headers: Dict[str, str] | None = None,
     ) -> ClientResponse:
-        return await self._session.post(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
+        return await self._session.post(
+            f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {})
+        )
 
     async def put(
-        self, path: str, body: Dict[str, str] | None = None, headers: Dict[str, str] | None = None
+        self,
+        path: str,
+        body: Dict[str, str] | None = None,
+        headers: Dict[str, str] | None = None,
     ) -> ClientResponse:
-        return await self._session.put(f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {}))
+        return await self._session.put(
+            f'{_BASE_URL}/{path}', json=(body or {}), headers=(headers or {})
+        )
 
-    async def delete(self, path: str, headers: Dict[str, str] | None = None) -> ClientResponse:
-        return await self._session.delete(f'{_BASE_URL}/{path}', headers=(headers or {}))
+    async def delete(
+        self, path: str, headers: Dict[str, str] | None = None
+    ) -> ClientResponse:
+        return await self._session.delete(
+            f'{_BASE_URL}/{path}', headers=(headers or {})
+        )
 
 
 @pytest_asyncio.fixture(scope='session')

@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     private_key: bytes
     public_key: bytes
 
-
     yandex_client_id: str
     yandex_client_secret: str
 

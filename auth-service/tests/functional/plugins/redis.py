@@ -6,9 +6,11 @@ from redis.asyncio import Redis
 from tests.functional.settings import test_settings
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope='session')
 async def redis_client() -> Iterator[Redis]:
-    redis_client = Redis(host=test_settings.redis_host, port=test_settings.redis_port)
+    redis_client = Redis(
+        host=test_settings.redis_host, port=test_settings.redis_port
+    )
     yield redis_client
     await redis_client.aclose()
 

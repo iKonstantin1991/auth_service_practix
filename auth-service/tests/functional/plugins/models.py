@@ -26,9 +26,13 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
-    created: Mapped[datetime] = mapped_column(insert_default=func.now())  # pylint: disable=not-callable
+    created: Mapped[datetime] = mapped_column(
+        insert_default=func.now()
+    )  # pylint: disable=not-callable
     logins: Mapped[List['UserLogin']] = relationship(back_populates='user')
-    roles: Mapped[List['Role']] = relationship(secondary=user_role, back_populates='users')
+    roles: Mapped[List['Role']] = relationship(
+        secondary=user_role, back_populates='users'
+    )
 
     def __repr__(self) -> str:
         return f'<User {self.email}>'
@@ -39,8 +43,12 @@ class Role(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     name: Mapped[str] = mapped_column(unique=True, nullable=False)
-    created: Mapped[datetime] = mapped_column(insert_default=func.now())  # pylint: disable=not-callable
-    users: Mapped[List['User']] = relationship(secondary=user_role, back_populates='roles')
+    created: Mapped[datetime] = mapped_column(
+        insert_default=func.now()
+    )  # pylint: disable=not-callable
+    users: Mapped[List['User']] = relationship(
+        secondary=user_role, back_populates='roles'
+    )
 
     def __repr__(self) -> str:
         return f'<Role {self.name}>'

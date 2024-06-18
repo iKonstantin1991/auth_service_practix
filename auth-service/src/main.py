@@ -12,7 +12,9 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+    OTLPSpanExporter,
+)
 
 import http_client
 from core.config import settings
@@ -25,9 +27,15 @@ logger = logging.getLogger(__name__)
 
 
 def configure_tracer() -> None:
-    provider = TracerProvider(resource=Resource(attributes={"service.name": settings.project_name}))
-    processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=f'http://{settings.jaeger_host}:{settings.jaeger_port}',
-                                                    insecure=True))
+    provider = TracerProvider(
+        resource=Resource(attributes={'service.name': settings.project_name})
+    )
+    processor = BatchSpanProcessor(
+        OTLPSpanExporter(
+            endpoint=f'http://{settings.jaeger_host}:{settings.jaeger_port}',
+            insecure=True,
+        )
+    )
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
 
@@ -61,15 +69,25 @@ app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
 async def before_request(request: Request, call_next):
     request_id = request.headers.get('X-Request-Id')
     if not request_id:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
-                              content={'detail': 'X-Request-Id is required'})
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'detail': 'X-Request-Id is required'},
+        )
     return await call_next(request)
 
 
 @app.exception_handler(Exception)
-async def exception_handler(request: Request, exc: Exception) -> ORJSONResponse:
-    logger.error('Exception has occurred when handled request to %s: %s', request.url , exc)
-    return ORJSONResponse(status_code=500, content={'detail': 'internal server error'})
+async def exception_handler(
+    request: Request, exc: Exception
+) -> ORJSONResponse:
+    logger.error(
+        'Exception has occurred when handled request to %s: %s',
+        request.url,
+        exc,
+    )
+    return ORJSONResponse(
+        status_code=500, content={'detail': 'internal server error'}
+    )
 
 
 if __name__ == '__main__':
