@@ -70,13 +70,3 @@ class UserLogin(Base):
 
     def __repr__(self) -> str:
         return f'<UserLogin {self.id}>'
-
-
-class YandexUser(Base):
-    __tablename__ = 'yandex_users'
-
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
-
-    def __repr__(self) -> str:
-        return f'<YandexUser {self.id}>'
