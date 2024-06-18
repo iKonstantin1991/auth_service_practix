@@ -1,10 +1,10 @@
 version: '3'
 
 services:
-  redis:
+  auth_redis:
     image: redis:7.2.4
     volumes:
-      - redis_data:/data
+      - auth_redis_data:/data
     expose:
       - "6379"
     healthcheck:
@@ -13,10 +13,10 @@ services:
       timeout: 5s
       retries: 5
 
-  pg:
+  auth_pg:
     image: postgres:16
     volumes:
-      - pg_data:/var/lib/postgresql/data/
+      - auth_pg_data:/var/lib/postgresql/data/
     expose:
       - "5432"
     env_file:
@@ -27,7 +27,7 @@ services:
       timeout: 5s
       retries: 5
 
-  jaeger:
+  auth_jaeger:
     image: jaegertracing/all-in-one:1.58
     environment:
       - COLLECTOR_OTLP_ENABLED=true
@@ -45,14 +45,14 @@ services:
     env_file:
       - ../auth-service/.env
     depends_on:
-      jaeger:
+      auth_jaeger:
         condition: service_started
-      pg:
+      auth_pg:
         condition: service_healthy
-      redis:
+      auth_redis:
         condition: service_healthy
 
-  nginx:
+  auth_nginx:
     image: nginx:1.25.3
     volumes:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -65,5 +65,5 @@ services:
       - auth_service
 
 volumes:
-  pg_data:
-  redis_data:
+  auth_pg_data:
+  auth_redis_data:
