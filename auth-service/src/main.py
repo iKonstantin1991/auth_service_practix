@@ -41,6 +41,7 @@ async def lifespan(_: FastAPI):
     await FastAPILimiter.init(redis.redis)
     yield
     await FastAPILimiter.close()
+    await redis.redis.close()
     await http_client.session.close()
 
 
