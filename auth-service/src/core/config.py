@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     jaeger_host: str = '127.0.0.1'
     jaeger_port: int = 6831
+    enable_tracer: bool = True
 
     echo_in_db: bool = True
 

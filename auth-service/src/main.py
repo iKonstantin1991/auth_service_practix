@@ -40,8 +40,9 @@ async def lifespan(_: FastAPI):
     await redis.redis.close()
     await http_client.session.close()
 
+if settings.enable_tracer:
+    configure_tracer()
 
-configure_tracer()
 app = FastAPI(
     title=settings.project_name,
     docs_url='/api/openapi',
