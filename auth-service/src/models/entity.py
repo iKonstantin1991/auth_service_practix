@@ -42,14 +42,19 @@ class Role(Base):
         return f'<Role {self.name}>'
 
 
-class YandexUser(Base):
-    __tablename__ = 'yandex_users'
+class ProviderUser(Base):
+    __tablename__ = 'provider_users'
+    __table_args__ = (
+        UniqueConstraint('id', 'provider'),
+    )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+    user: Mapped['User'] = relationship()
 
     def __repr__(self) -> str:
-        return f'<YandexUser {self.id}>'
+        return f'<ProviderUser {self.id}>'
 
 
 class UserLogin(Base):

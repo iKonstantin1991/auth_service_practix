@@ -1,21 +1,27 @@
 import logging
 from uuid import uuid4, UUID
 from typing import Annotated, List
+from enum import Enum
 
 from aiohttp import ClientSession
 from fastapi import Depends
 from sqlalchemy import select, update, insert, delete
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
 from db.postgres import get_session
 from http_client import get_session as get_http_session
 from core.config import settings
-from models.entity import User, YandexUser, Role, user_role
+from models.entity import User, ProviderUser, Role, user_role
 from services.password_service import PasswordService, get_password_service
 
 
 logger = logging.getLogger(__name__)
+
+
+class UserProvider(str, Enum):
+    YANDEX = 'yandex'
 
 
 class UserService:
@@ -42,22 +48,22 @@ class UserService:
         await self._db_session.commit()
         return user
 
-    async def get_or_create_from_yandex(self, code: str) -> User:
-        logger.info('Getting or creating user from yandex')
-        token = await self._get_yandex_user_data_access_token(code)
-        user_info = await self._get_yandex_user_info_by_token(token)
-        yandex_user_id, email = user_info['id'], user_info['default_email']
-        yandex_user = await self._db_session.scalar(select(YandexUser).where(YandexUser.id == yandex_user_id))
-        if yandex_user:
-            logger.info('Yandex user found, id: %s', yandex_user_id)
-            user = await self.get_by_id(yandex_user.user_id)
-            return user
-        logger.info('Yandex user with id %s not found, creating new user', yandex_user_id)
-        hashed_password = self._password_service.get_password_hash(email, str(uuid4()))
-        user = User(id=uuid4(), email=email, hashed_password=hashed_password, roles=[])
-        yandex_user = YandexUser(id=yandex_user_id, user_id=user.id)
+    async def get_or_create_from_provider(self, code: str, provider: UserProvider) -> User:
+        logger.info('Getting or creating user from provider: %s', provider)
+        provided_user_details = await self._get_provided_user_details(code, provider)
+        provider_user = await self._db_session.scalar(select(ProviderUser)
+                                                      .where(ProviderUser.id == provided_user_details.id)
+                                                      .where(ProviderUser.provider == provider))
+        if provider_user:
+            logger.info('User from provider %s with id %s found', provider, provided_user_details.id)
+            return await self.get_by_id(provider_user.user_id)
+        logger.info('User from provider %s with id %s not found, creating new user',
+                    provider, provided_user_details.id)
+        hashed_password = self._password_service.get_password_hash(provided_user_details.email, str(uuid4()))
+        user = User(id=uuid4(), email=provided_user_details.email, hashed_password=hashed_password, roles=[])
+        provider_user = ProviderUser(id=provided_user_details.id, user=user, provider=provider)
         self._db_session.add(user)
-        self._db_session.add(yandex_user)
+        self._db_session.add(provider_user)
         await self._db_session.commit()
         return user
 
@@ -110,6 +116,12 @@ class UserService:
         )
         await self._db_session.commit()
 
+    async def _get_provided_user_details(
+        self, code: str, provider: UserProvider  # pylint: disable=unused-argument
+    ) -> '_ProvidedUserDetails':
+        token = await self._get_yandex_user_data_access_token(code)
+        return await self._get_yandex_user(token)
+
     async def _get_yandex_user_data_access_token(self, code: str) -> str:
         logger.info('Getting user data access token')
         async with self._http_session.post(
@@ -126,13 +138,14 @@ class UserService:
             return (await response.json())['access_token']
 
 
-    async def _get_yandex_user_info_by_token(self, token: str) -> dict:
+    async def _get_yandex_user(self, token: str) -> '_ProvidedUserDetails':
         logger.info('Getting user info by token')
         async with self._http_session.get(
             'https://login.yandex.ru/info',
             headers={'Authorization': f'OAuth {token}'},
         ) as response:
-            return await response.json()
+            body = await response.json()
+            return _ProvidedUserDetails(id=body['id'], email=body['default_email'])
 
 
 def get_user_service(
@@ -141,3 +154,8 @@ def get_user_service(
     http_session: Annotated[ClientSession, Depends(get_http_session)],
 ) -> UserService:
     return UserService(db_session, password_service, http_session)
+
+
+class _ProvidedUserDetails(BaseModel):
+    id: str
+    email: str
