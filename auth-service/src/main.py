@@ -3,8 +3,10 @@ import logging
 
 import uvicorn
 import aiohttp
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Depends
 from fastapi.responses import ORJSONResponse
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
 from fastapi_pagination import add_pagination
 from redis.asyncio import Redis
 from opentelemetry import trace
@@ -36,7 +38,9 @@ def configure_tracer() -> None:
 async def lifespan(_: FastAPI):
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
     http_client.session = aiohttp.ClientSession()
+    await FastAPILimiter.init(redis.redis)
     yield
+    await FastAPILimiter.close()
     await redis.redis.close()
     await http_client.session.close()
 
@@ -53,9 +57,23 @@ app = FastAPI(
 add_pagination(app)
 FastAPIInstrumentor.instrument_app(app)
 
-app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
-app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
-app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
+app.include_router(
+    auth.router, prefix='/api/v1/auth',
+    tags=['auth'],
+    dependencies=[Depends(RateLimiter(times=5, seconds=1))]
+)
+app.include_router(
+    roles.router,
+    prefix='/api/v1/roles',
+    tags=['roles'],
+    dependencies=[Depends(RateLimiter(times=5, seconds=1))]
+)
+app.include_router(
+    users.router,
+    prefix='/api/v1/users',
+    tags=['users'],
+    dependencies=[Depends(RateLimiter(times=5, seconds=1))]
+)
 
 
 @app.middleware('http')
