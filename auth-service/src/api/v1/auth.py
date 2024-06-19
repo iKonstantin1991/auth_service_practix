@@ -20,7 +20,7 @@ async def signup(
     user_service: Annotated[UserService, Depends(get_user_service)]
 ) -> UserOut:
     if await user_service.get_by_email(new_user.email):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='User already exists')
     return await user_service.create(new_user.email, new_user.password)
 
 
@@ -33,9 +33,9 @@ async def login(
 ) -> Token:
     user = await user_service.get_by_email(user_credentials.email)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     if not auth_service.verify_password(user_credentials.email, user_credentials.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect password")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Incorrect password')
     access_token, refresh_token = await auth_service.create_token_pair(user.id, user.roles)
     await auth_service.update_history(user.id, user_agent)
     return Token(access_token=access_token, refresh_token=refresh_token)
@@ -55,7 +55,7 @@ async def refresh(
     user_id = auth_service.get_user_id_from_refresh_token(refresh_token)
     user = await user_service.get_by_id(user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     access_token, refresh_token = await auth_service.create_token_pair(user.id, user.roles)
     return Token(access_token=access_token, refresh_token=refresh_token)
 

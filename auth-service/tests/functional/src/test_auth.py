@@ -44,8 +44,8 @@ async def test_get_auth_history_returns_history(client: Client, user: TestUser) 
 
     assert response.status == HTTPStatus.OK
     body = await response.json()
-    assert len(body["items"]) == 1
-    assert body["items"][0]['user_agent'] == user_agent
+    assert len(body['items']) == 1
+    assert body['items'][0]['user_agent'] == user_agent
 
 
 @pytest.mark.asyncio

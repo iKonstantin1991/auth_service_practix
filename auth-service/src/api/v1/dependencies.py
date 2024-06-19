@@ -24,7 +24,7 @@ async def get_request_user_id(
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ) -> UUID:
     if not await auth_service.is_access_token_valid(access_token):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid access token")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid access token')
     return auth_service.get_user_id_from_access_token(access_token)
 
 
@@ -33,7 +33,7 @@ async def revoke_tokens(
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ) -> None:
     if not await auth_service.check_is_valid_and_remove_refresh_token(refresh_token):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid refresh token")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid refresh token')
     await auth_service.logout(refresh_token)
 
 
@@ -44,4 +44,4 @@ async def check_user_staff(
 ):
     user_roles = await user_service.get_roles(request_user_id)
     if not await role_service.is_staff(user_roles):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You do not have permission')

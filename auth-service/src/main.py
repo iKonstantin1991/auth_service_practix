@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_tracer() -> None:
-    provider = TracerProvider(resource=Resource(attributes={"service.name": settings.project_name}))
+    provider = TracerProvider(resource=Resource(attributes={'service.name': settings.project_name}))
     processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=f'http://{settings.jaeger_host}:{settings.jaeger_port}',
                                                     insecure=True))
     provider.add_span_processor(processor)

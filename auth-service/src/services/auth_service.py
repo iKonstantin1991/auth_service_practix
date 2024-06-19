@@ -11,15 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field, ValidationError
 from fastapi import Depends
 from fastapi_pagination.ext.sqlalchemy import paginate
+from user_agents import parse
 
 from db.postgres import get_session
 from core.config import settings
 from models.entity import UserLogin, Role
 from services.password_service import PasswordService, get_password_service
 from storage.token_storage import TokenStorage, get_token_storage
-from user_agents import parse
 
-_ALGORITHM = "RS256"
+_ALGORITHM = 'RS256'
 _ACCESS_TOKEN_EXPIRE_SECONDS = 24 * 60 * 60  # 1 day
 _REFRESH_TOKEN_EXPIRE_SECONDS = 10 * 24 * 60 * 60  # 10 days
 
@@ -34,8 +34,8 @@ class UserDeviceType(str, Enum):
 
 
 class TokenType(str, Enum):
-    ACCESS = "access"
-    REFRESH = "refresh"
+    ACCESS = 'access'
+    REFRESH = 'refresh'
 
 
 class BaseTokenPayload(BaseModel):
@@ -47,8 +47,8 @@ class BaseTokenPayload(BaseModel):
 
     def model_dump(self, *args, **kwargs) -> dict:
         data = super().model_dump(*args, **kwargs)
-        data["user_id"] = str(data["user_id"])
-        data["jti"] = str(data["jti"])
+        data['user_id'] = str(data['user_id'])
+        data['jti'] = str(data['jti'])
         return data
 
 
@@ -65,7 +65,7 @@ class RefreshTokenPayload(BaseTokenPayload):
 
     def model_dump(self, *args, **kwargs) -> dict:
         data = super().model_dump(*args, **kwargs)
-        data["access_jti"] = str(data["access_jti"])
+        data['access_jti'] = str(data['access_jti'])
         return data
 
 

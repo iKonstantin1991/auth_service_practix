@@ -60,5 +60,5 @@ async def create_superuser():
         print(message)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     create_superuser()
