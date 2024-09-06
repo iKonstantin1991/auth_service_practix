@@ -11,15 +11,11 @@ from services.role_service import RoleService, get_role_service
 router = APIRouter()
 
 
-@router.get('/{user_id}', response_model=UserOut)
+@router.get('/{user_id}', response_model=UserOut, dependencies=[Depends(get_request_user_id)])
 async def get_user(
         user_id: UUID,
         user_service: Annotated[UserService, Depends(get_user_service)],
-        request_user_id: Annotated[UUID, Depends(get_request_user_id)],
 ) -> UserOut:
-    if user_id != request_user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission")
-
     return await user_service.get_by_id(user_id)
 
 
